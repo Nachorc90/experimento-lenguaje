@@ -1,4 +1,9 @@
 import streamlit as st
+import random
+import time
+import pandas as pd
+import qrcode
+from io import BytesIO
 import config  # Importamos la configuración global
 
 # Clave secreta para el Master
@@ -11,13 +16,6 @@ password = st.sidebar.text_input("Ingrese la clave de administrador:", type="pas
 # Verificar si es Master
 is_master = password == MASTER_PASSWORD
 
-import streamlit as st
-import random
-import time
-import pandas as pd
-import qrcode
-from io import BytesIO
-
 # Diccionario de definiciones con sus respuestas
 diccionario = {
     "Estado de ánimo positivo y de alegría": {"respuesta": "feliz", "antonimo": "triste"},
@@ -27,16 +25,18 @@ diccionario = {
     "Que tiene mucha luz": {"respuesta": "claro", "antonimo": "oscuro"}
 }
 
+# Título de la app
 st.title("Experimento de Tiempo de Reacción")
 
-import config  # Importamos la configuración global
-
+# Mostrar la condición actual desde config.py
 st.write(f"**Condición actual:** {config.condicion_global}")
 
+# Solo el Master puede cambiar la condición
 if is_master:
     st.success("Eres el administrador del experimento")
     
     if st.button("Cambiar Condición"):
+        # Cambiar la condición entre 'Definición → Significado' y 'Definición → Antónimo'
         nueva_condicion = "Definición → Antónimo" if config.condicion_global == "Definición → Significado" else "Definición → Significado"
 
         # Guardar la nueva condición en config.py
@@ -48,7 +48,7 @@ if is_master:
 else:
     st.info("Esperando instrucciones del administrador.")
 
-
+# Iniciar ensayo
 if st.button("Iniciar Ensayo"):
     definicion, opciones = random.choice(list(diccionario.items()))
     st.write(f"**Definición:** {definicion}")
@@ -59,7 +59,7 @@ if st.button("Iniciar Ensayo"):
     
     if respuesta:
         tiempo_reaccion = t_fin - t_inicio
-        if condicion == "Definición → Significado":
+        if config.condicion_global == "Definición → Significado":
             es_correcto = respuesta.lower() == opciones["respuesta"].lower()
             palabra_correcta = opciones["respuesta"]
         else:
@@ -80,3 +80,4 @@ qr_bytes = BytesIO()
 qr.save(qr_bytes, format="PNG")
 
 st.image(qr_bytes, caption="Escanea el QR para acceder al experimento", use_container_width=True)
+
