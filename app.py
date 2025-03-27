@@ -17,8 +17,22 @@ diccionario = {
 
 st.title("Experimento de Tiempo de Reacción")
 
-# Elección de la condición
-condicion = st.radio("Selecciona la condición:", ["Definición → Significado", "Definición → Antónimo"])
+import config  # Importamos la configuración global
+
+# Mostrar la condición actual (sin permitir cambios directos por los usuarios)
+st.write(f"**Condición actual:** {config.condicion_global}")
+
+# Solo el administrador puede cambiar la condición
+if st.button("Cambiar Condición"):
+    nueva_condicion = "Definición → Antónimo" if config.condicion_global == "Definición → Significado" else "Definición → Significado"
+    
+    # Guardar la nueva condición en config.py
+    with open("config.py", "w") as f:
+        f.write(f'condicion_global = "{nueva_condicion}"')
+
+    st.success(f"Condición cambiada a: {nueva_condicion}")
+    st.experimental_rerun()  # Recargar la app para actualizar la condición
+
 
 if st.button("Iniciar Ensayo"):
     definicion, opciones = random.choice(list(diccionario.items()))
