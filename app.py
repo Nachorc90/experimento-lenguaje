@@ -1,3 +1,15 @@
+import streamlit as st
+import config  # Importamos la configuración global
+
+# Clave secreta para el Master
+MASTER_PASSWORD = "experimento123"  # Cámbiala por una más segura
+
+# Mostrar cuadro de inicio de sesión solo si el usuario quiere ser Master
+st.sidebar.title("Modo Administrador")
+password = st.sidebar.text_input("Ingrese la clave de administrador:", type="password")
+
+# Verificar si es Master
+is_master = password == MASTER_PASSWORD
 
 import streamlit as st
 import random
@@ -19,19 +31,22 @@ st.title("Experimento de Tiempo de Reacción")
 
 import config  # Importamos la configuración global
 
-# Mostrar la condición actual (sin permitir cambios directos por los usuarios)
 st.write(f"**Condición actual:** {config.condicion_global}")
 
-# Solo el administrador puede cambiar la condición
-if st.button("Cambiar Condición"):
-    nueva_condicion = "Definición → Antónimo" if config.condicion_global == "Definición → Significado" else "Definición → Significado"
+if is_master:
+    st.success("Eres el administrador del experimento")
     
-    # Guardar la nueva condición en config.py
-    with open("config.py", "w") as f:
-        f.write(f'condicion_global = "{nueva_condicion}"')
+    if st.button("Cambiar Condición"):
+        nueva_condicion = "Definición → Antónimo" if config.condicion_global == "Definición → Significado" else "Definición → Significado"
 
-    st.success(f"Condición cambiada a: {nueva_condicion}")
-    st.experimental_rerun()  # Recargar la app para actualizar la condición
+        # Guardar la nueva condición en config.py
+        with open("config.py", "w") as f:
+            f.write(f'condicion_global = "{nueva_condicion}"')
+
+        st.success(f"Condición cambiada a: {nueva_condicion}")
+        st.experimental_rerun()
+else:
+    st.info("Esperando instrucciones del administrador.")
 
 
 if st.button("Iniciar Ensayo"):
