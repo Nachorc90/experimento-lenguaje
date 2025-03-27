@@ -45,7 +45,7 @@ if st.button("Iniciar Ensayo"):
 
 # Generar QR Code con la URL de la app
 st.subheader("Comparte el experimento")
-app_url = "https://tu-url-de-streamlit"  # Cambia esto por tu URL de Streamlit cuando la subas
+app_url = "https://experimento-lenguaje-evvnuoczsrg43edwgztyrv.streamlit.app/"  # Cambia esto por tu URL de Streamlit cuando la subas
 qr = qrcode.make(app_url)
 qr_bytes = BytesIO()
 qr.save(qr_bytes, format="PNG")
