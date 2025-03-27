@@ -50,4 +50,4 @@ qr = qrcode.make(app_url)
 qr_bytes = BytesIO()
 qr.save(qr_bytes, format="PNG")
 
-st.image(qr_bytes, caption="Escanea el QR para acceder al experimento", use_column_width=True)
+st.image(qr_bytes, caption="Escanea el QR para acceder al experimento", use_container_width=True)
