@@ -92,11 +92,15 @@ if st.session_state.ensayo <= 20:
 
     if "definicion" not in st.session_state:
 
-        # Seleccionar una definición aleatoria que no se haya usado recientemente
-        definicion = random.choice([k for k in diccionario.keys() if k not in st.session_state.usadas])
-        st.session_state.usadas.add(definicion)
-        if len(st.session_state.usadas) > 5:
-            st.session_state.usadas.pop()
+        # Determinar el conjunto de palabras usadas según la condición actual
+        if st.session_state.condicion_actual == "Definición → Significado":
+            usadas = st.session_state.usadas_significado
+        else:
+            usadas = st.session_state.usadas_antonimo
+
+        # Seleccionar una definición que no se haya usado en esta condición
+        definicion = random.choice([k for k in diccionario.keys() if k not in usadas])
+        usadas.add(definicion)
 
         opciones = diccionario[definicion]
 
@@ -129,6 +133,10 @@ if st.session_state.ensayo <= 20:
         index=None,
         key=f"respuesta_{st.session_state.ensayo}"
     )
+
+    if respuesta:
+        t_fin = time.time()
+        tiempo = t_fin - st.session_state.t
 
     if respuesta:
         t_fin = time.time()
