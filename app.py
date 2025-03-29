@@ -4,13 +4,19 @@ import time
 import pandas as pd
 import qrcode
 from io import BytesIO
-import config
+import config  # Importamos la configuración global
 
-MASTER_PASSWORD = "experimento123"
+# Clave secreta para el Master
+MASTER_PASSWORD = "experimento123"  # Cámbiala por una más segura
+
+# Mostrar cuadro de inicio de sesión solo si el usuario quiere ser Master
 st.sidebar.title("Modo Administrador")
 password = st.sidebar.text_input("Ingrese la clave de administrador:", type="password")
+
+# Verificar si es Master
 is_master = password == MASTER_PASSWORD
 
+# Diccionario de definiciones
 diccionario = {
     "Estado de ánimo positivo y de alegría": {"respuesta": "feliz", "antonimo": "triste"},
     "Que se mueve a gran velocidad": {"respuesta": "rápido", "antonimo": "lento"},
@@ -19,80 +25,84 @@ diccionario = {
     "Que tiene mucha luz": {"respuesta": "claro", "antonimo": "oscuro"}
 }
 
-st.title("Experimento de Tiempo de Reacción")
+# Título
+st.title("🧪 Experimento de Tiempo de Reacción")
+
+# Mostrar condición actual
 st.write(f"**Condición actual:** {config.condicion_global}")
 
+# Configuración Master
 if is_master:
     st.success("Eres el administrador del experimento")
-
+    
     if st.button("Cambiar Condición"):
         nueva_condicion = "Definición → Antónimo" if config.condicion_global == "Definición → Significado" else "Definición → Significado"
+
         with open("config.py", "w") as f:
-            f.write(f'condicion_global = "{nueva_condicion}"\n')
+            f.write(f'condicion_global = "{nueva_condicion}"')
+
         st.success(f"Condición cambiada a: {nueva_condicion}")
         st.experimental_rerun()
 else:
     st.info("Esperando instrucciones del administrador.")
 
-# ======== EXPERIMENTO ========
-if 'ejecutando' not in st.session_state:
-    st.session_state.ejecutando = False
-
+# Iniciar ensayo
 if st.button("Iniciar Ensayo"):
     definicion, opciones = random.choice(list(diccionario.items()))
     st.session_state.definicion = definicion
-    st.session_state.opciones = opciones
-    st.session_state.ejecutando = True
-    st.session_state.t_inicio = time.time()
-    st.session_state.respuesta = None
 
-if st.session_state.ejecutando:
-    st.write(f"**Definición:** {st.session_state.definicion}")
-
-    # Opciones
+    # Elegir la respuesta correcta según condición
     if config.condicion_global == "Definición → Significado":
-        correcta = st.session_state.opciones["respuesta"]
+        correcta = opciones["respuesta"]
     else:
-        correcta = st.session_state.opciones["antonimo"]
+        correcta = opciones["antonimo"]
 
+    # Crear lista de opciones
     otra_opcion = random.choice([
         v["respuesta"] if config.condicion_global == "Definición → Significado" else v["antonimo"]
-        for k, v in diccionario.items() if k != st.session_state.definicion
+        for k, v in diccionario.items() if k != definicion
     ])
-
-    lista_opciones = [correcta, otra_opcion, 
-                      st.session_state.opciones["antonimo"] if correcta == st.session_state.opciones["respuesta"] else st.session_state.opciones["respuesta"]]
+    lista_opciones = [correcta, otra_opcion, opciones["antonimo"] if correcta == opciones["respuesta"] else opciones["respuesta"]]
     random.shuffle(lista_opciones)
 
-    st.write("**Selecciona la opción correcta:**")
+    st.session_state.lista_opciones = lista_opciones
+    st.session_state.correcta = correcta
+    st.session_state.t_inicio = time.time()
 
-    col1, col2, col3 = st.columns(3)
-    columnas = [col1, col2, col3]
+# Mostrar pregunta si ya se inició
+if "definicion" in st.session_state:
+    st.write(f"**Definición:** {st.session_state.definicion}")
 
-    for i, opcion in enumerate(lista_opciones):
-        if columnas[i].button(opcion.upper()):
-            st.session_state.respuesta = opcion
-            st.session_state.t_fin = time.time()
-            st.session_state.ejecutando = False
+    respuesta = st.radio(
+        "Selecciona la opción correcta:",
+        st.session_state.lista_opciones,
+        index=None,  # Para que no haya ninguna marcada
+        key="respuesta"
+    )
 
-if st.session_state.respuesta:
+    if respuesta:
+        st.session_state.t_fin = time.time()
+
+# Mostrar resultado
+if "respuesta" in st.session_state and st.session_state.respuesta:
     tiempo_reaccion = st.session_state.t_fin - st.session_state.t_inicio
-    es_correcto = st.session_state.respuesta.lower() == correcta.lower()
+    es_correcto = st.session_state.respuesta.lower() == st.session_state.correcta.lower()
 
     st.write(f"Has seleccionado: **{st.session_state.respuesta}**")
-    st.write(f"Respuesta correcta: **{correcta}**")
-    st.write(f"Tiempo de reacción: {tiempo_reaccion:.3f} segundos")
+    st.write(f"Respuesta correcta: **{st.session_state.correcta}**")
+    st.write(f"⏱️ Tiempo de reacción: {tiempo_reaccion:.3f} segundos")
 
     if es_correcto:
         st.success("¡Correcto!")
     else:
         st.error("Incorrecto.")
 
-# ======== QR ========
-st.subheader("Comparte el experimento")
-app_url = "https://experimento-lenguaje-evvnuoczsrg43edwgztyrv.streamlit.app/"
+# QR
+st.subheader("📲 Comparte el experimento")
+app_url = "https://experimento-lenguaje-evvnuoczsrg43edwgztyrv.streamlit.app/"  # Cambia esto por tu URL
 qr = qrcode.make(app_url)
 qr_bytes = BytesIO()
 qr.save(qr_bytes, format="PNG")
+
 st.image(qr_bytes, caption="Escanea el QR para acceder al experimento", use_container_width=True)
 
