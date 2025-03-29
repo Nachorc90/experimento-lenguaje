@@ -59,8 +59,8 @@ if is_master:
 if not st.session_state.experimento_iniciado:
     if st.button("🚀 Comenzar Experimento"):
         st.session_state.experimento_iniciado = True
-        st.experimental_rerun()
-    st.stop()
+    else:
+        st.stop()
 
 # -------- EXPERIMENTO --------
 if st.session_state.ensayo <= 20:
