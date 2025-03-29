@@ -23,27 +23,28 @@ st.markdown("""
 4. Después, harás 10 ensayos buscando el **Antónimo**.
 5. Al final podrás ver tus resultados.
 """)
-# -------- DICCIONARIO DE PALABRAS --------
+
+# -------- DICCIONARIO DE PALABRAS (SIN REPETIR LA PALABRA EN SU DEFINICIÓN) --------
 diccionario = {
     "Estado de ánimo positivo y de alegría": {"respuesta": "feliz", "antonimo": "triste"},
-    "Que se mueve a gran velocidad": {"respuesta": "rápido", "antonimo": "lento"},
-    "De gran tamaño": {"respuesta": "grande", "antonimo": "pequeño"},
-    "Que tiene mucha fuerza": {"respuesta": "fuerte", "antonimo": "débil"},
-    "Que tiene mucha luz": {"respuesta": "claro", "antonimo": "oscuro"},
-    "Que no tiene suciedad": {"respuesta": "limpio", "antonimo": "sucio"},
-    "Que no pesa mucho": {"respuesta": "ligero", "antonimo": "pesado"},
-    "Que está lleno de vida y energía": {"respuesta": "activo", "antonimo": "pasivo"},
-    "Que no es duro": {"respuesta": "blando", "antonimo": "duro"},
-    "Que se entiende con facilidad": {"respuesta": "simple", "antonimo": "complejo"},
-    "Que tiene poca temperatura": {"respuesta": "frío", "antonimo": "caliente"},
-    "Que está lleno de gente u objetos": {"respuesta": "lleno", "antonimo": "vacío"},
-    "Que es nuevo o reciente": {"respuesta": "moderno", "antonimo": "antiguo"},
-    "Que está en la parte superior": {"respuesta": "arriba", "antonimo": "abajo"},
-    "Que es honesto y sincero": {"respuesta": "verdadero", "antonimo": "falso"},
-    "Que no tiene miedo": {"respuesta": "valiente", "antonimo": "cobarde"},
-    "Que no hace ruido": {"respuesta": "silencioso", "antonimo": "ruidoso"},
-    "Que no está cerca": {"respuesta": "lejos", "antonimo": "cerca"},
-    "Que es fácil de hacer o entender": {"respuesta": "fácil", "antonimo": "difícil"}
+    "Movimiento a gran velocidad": {"respuesta": "rápido", "antonimo": "lento"},
+    "De dimensiones superiores a lo común": {"respuesta": "grande", "antonimo": "pequeño"},
+    "Que posee una notable resistencia o vigor": {"respuesta": "fuerte", "antonimo": "débil"},
+    "Con una gran cantidad de iluminación": {"respuesta": "claro", "antonimo": "oscuro"},
+    "Sin suciedad ni impurezas": {"respuesta": "limpio", "antonimo": "sucio"},
+    "De peso reducido": {"respuesta": "ligero", "antonimo": "pesado"},
+    "Lleno de energía y dinamismo": {"respuesta": "activo", "antonimo": "pasivo"},
+    "De textura suave y fácil de comprimir": {"respuesta": "blando", "antonimo": "duro"},
+    "Que se puede comprender sin dificultad": {"respuesta": "simple", "antonimo": "complejo"},
+    "Con una temperatura reducida": {"respuesta": "frío", "antonimo": "caliente"},
+    "Con una gran cantidad de objetos o personas": {"respuesta": "lleno", "antonimo": "vacío"},
+    "Que pertenece a tiempos recientes": {"respuesta": "moderno", "antonimo": "antiguo"},
+    "Ubicado en la parte superior de algo": {"respuesta": "arriba", "antonimo": "abajo"},
+    "Caracterizado por decir la verdad": {"respuesta": "verdadero", "antonimo": "falso"},
+    "Con ausencia de miedo": {"respuesta": "valiente", "antonimo": "cobarde"},
+    "Sin emisión de sonidos": {"respuesta": "silencioso", "antonimo": "ruidoso"},
+    "Situado a gran distancia": {"respuesta": "lejos", "antonimo": "cerca"},
+    "Que no requiere mucho esfuerzo para entenderse": {"respuesta": "fácil", "antonimo": "difícil"}
 }
 
 # -------- QR SOLO EN PANTALLA DE INICIO --------
@@ -60,7 +61,7 @@ if "ensayo" not in st.session_state:
     st.session_state.condicion_actual = "Definición → Significado"
     st.session_state.transicion = False
     st.session_state.experimento_iniciado = False
-    st.session_state.usadas = set()  # Para evitar repetir definiciones consecutivamente
+    st.session_state.usadas = set()
 
 # -------- ADMINISTRADOR --------
 if is_master:
@@ -70,7 +71,6 @@ if is_master:
             del st.session_state[key]
         st.rerun()
 
-
 # -------- BOTÓN DE INICIO --------
 if not st.session_state.experimento_iniciado:
     if st.button("🚀 Comenzar Experimento"):
@@ -78,21 +78,24 @@ if not st.session_state.experimento_iniciado:
     else:
         st.stop()
 
+# -------- TRANSICIÓN ENTRE CONDICIONES --------
+if st.session_state.ensayo == 11 and not st.session_state.transicion:
+    st.session_state.condicion_actual = "Definición → Antónimo"
+    st.session_state.transicion = True
+    st.info("✅ Has completado los primeros 10 ensayos.\n\nAhora comienza la condición **Definición → Antónimo**.")
+    if st.button("➡️ Continuar"):
+        st.rerun()
+    st.stop()
+
 # -------- EXPERIMENTO --------
 if st.session_state.ensayo <= 20:
 
-    if st.session_state.ensayo == 11 and not st.session_state.transicion:
-        st.session_state.condicion_actual = "Definición → Antónimo"
-        st.session_state.transicion = True
-        st.info("✅ Has completado los primeros 10 ensayos.\n\nAhora comienza la condición **Definición → Antónimo**.")
-        st.stop()
-
     if "definicion" not in st.session_state:
 
-        # Seleccionar una definición aleatoria que no se haya usado en el ensayo anterior
+        # Seleccionar una definición aleatoria que no se haya usado recientemente
         definicion = random.choice([k for k in diccionario.keys() if k not in st.session_state.usadas])
         st.session_state.usadas.add(definicion)
-        if len(st.session_state.usadas) > 5:  # Controla la repetición (ajústalo según el tamaño del diccionario)
+        if len(st.session_state.usadas) > 5:
             st.session_state.usadas.pop()
 
         opciones = diccionario[definicion]
@@ -164,6 +167,7 @@ else:
     # Guardar CSV
     df.to_csv("resultados.csv", index=False)
     st.download_button("📥 Descargar Resultados", data=df.to_csv().encode(), file_name="resultados.csv")
+
 
 
 
