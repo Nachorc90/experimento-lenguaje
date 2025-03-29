@@ -20,37 +20,55 @@ diccionario = {
     "Que tiene mucha luz": {"respuesta": "claro", "antonimo": "oscuro"}
 }
 
-# ---------- INSTRUCCIONES ----------
-st.title("🧪 Experimento")
+# -------- INSTRUCCIONES --------
+st.title("🧪 Experimento de Tiempo de Reacción")
+
 st.subheader("📄 Instrucciones")
 st.markdown("""
-A continuación Vas a ver una **definición**. Tras leerla debes elegir la opción correcta lo más rápido posible. Primero harás 10 ensayos buscando el **Significado**. Después, automáticamente pasarás a 10 ensayos buscando el **Antónimo**. Al final verás tus resultados.
+1. Vas a ver una **definición**.
+2. Deberás elegir la opción correcta lo más rápido posible.
+3. Harás 10 ensayos buscando el **Significado**.
+4. Después, harás 10 ensayos buscando el **Antónimo**.
+5. Al final podrás ver tus resultados.
 """)
 
-# ---------- VARIABLES DE SESIÓN ----------
+# -------- QR SOLO EN PANTALLA DE INICIO --------
+app_url = "https://experimento-lenguaje-evvnuoczsrg43edwgztyrv.streamlit.app/"
+qr = qrcode.make(app_url)
+qr_bytes = BytesIO()
+qr.save(qr_bytes, format="PNG")
+st.image(qr_bytes, caption="Escanea el QR para acceder al experimento", use_container_width=True)
+
+# -------- VARIABLES DE SESIÓN --------
 if "ensayo" not in st.session_state:
     st.session_state.ensayo = 1
     st.session_state.resultados = []
     st.session_state.condicion_actual = "Definición → Significado"
     st.session_state.transicion = False
+    st.session_state.experimento_iniciado = False
 
-# ---------- ADMINISTRADOR ----------
+# -------- ADMINISTRADOR --------
 if is_master:
     st.sidebar.success("Eres el administrador")
     if st.sidebar.button("Reiniciar experimento"):
-        for key in ["ensayo", "resultados", "condicion_actual", "transicion"]:
-            if key in st.session_state:
-                del st.session_state[key]
+        for key in list(st.session_state.keys()):
+            del st.session_state[key]
         st.experimental_rerun()
 
-# ---------- LÓGICA DEL EXPERIMENTO ----------
+# -------- BOTÓN DE INICIO --------
+if not st.session_state.experimento_iniciado:
+    if st.button("🚀 Comenzar Experimento"):
+        st.session_state.experimento_iniciado = True
+        st.experimental_rerun()
+    st.stop()
+
+# -------- EXPERIMENTO --------
 if st.session_state.ensayo <= 20:
 
-    # Cambio de condición después de los primeros 10 ensayos
     if st.session_state.ensayo == 11 and not st.session_state.transicion:
         st.session_state.condicion_actual = "Definición → Antónimo"
         st.session_state.transicion = True
-        st.info("✅ Has completado los primeros 10 ensayos.\n\nAhora comenzamos con la condición **Definición → Antónimo**.")
+        st.info("✅ Has completado los primeros 10 ensayos.\n\nAhora comienza la condición **Definición → Antónimo**.")
         st.stop()
 
     if "definicion" not in st.session_state:
@@ -113,7 +131,7 @@ if st.session_state.ensayo <= 20:
             st.session_state.pop("definicion")
             st.experimental_rerun()
 
-# ---------- RESULTADOS ----------
+# -------- RESULTADOS --------
 else:
     st.success("🎉 ¡Has completado los 20 ensayos!")
     df = pd.DataFrame(st.session_state.resultados)
@@ -121,15 +139,10 @@ else:
 
     # Guardar CSV
     df.to_csv("resultados.csv", index=False)
-
-    # QR
-    st.subheader("📲 Comparte el experimento")
-    app_url = "https://experimento-lenguaje-evvnuoczsrg43edwgztyrv.streamlit.app/"
-    qr = qrcode.make(app_url)
-    qr_bytes = BytesIO()
-    qr.save(qr_bytes, format="PNG")
-    st.image(qr_bytes, caption="Escanea el QR para acceder al experimento", use_container_width=True)
+    st.download_button("📥 Descargar Resultados", data=df.to_csv().encode(), file_name="resultados.csv")
 
 
-st.image(qr_bytes, caption="Escanea el QR para acceder al experimento", use_container_width=True)
+
+
+
 
