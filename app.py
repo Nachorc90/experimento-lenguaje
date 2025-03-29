@@ -8,11 +8,30 @@ from io import BytesIO
 # -------- CONFIGURACIONES --------
 MASTER_PASSWORD = "experimento123"
 
+usuarios_preparados = set()
+usuarios_conectados = set()
+experimento_iniciado = False
+
 st.sidebar.title("Modo Administrador")
 password = st.sidebar.text_input("Ingrese la clave de administrador:", type="password")
 is_master = password == MASTER_PASSWORD
+es_master = st.sidebar.checkbox("Soy el Master")
 
+# -------- INICIO DE SESIÓN --------
+nombre_usuario = st.text_input("Ingrese su nombre:", key="usuario")
+if nombre_usuario:
+    usuarios_conectados.add(nombre_usuario)
+    st.session_state.usuario = nombre_usuario
 
+# -------- ADMINISTRADOR --------
+if es_master:
+    st.sidebar.success("Eres el administrador")
+    st.sidebar.write(f"Usuarios conectados: {len(usuarios_conectados)}")
+    st.sidebar.write(f"Usuarios preparados: {len(usuarios_preparados)}")
+    
+    if st.sidebar.button("Iniciar experimento"):
+        experimento_iniciado = True
+        st.session_state.experimento_iniciado = True
 
 # -------- INSTRUCCIONES --------
 st.title("🧪 Experimento de Tiempo de Reacción")
@@ -25,6 +44,20 @@ st.markdown("""
 4. Después, harás 10 ensayos buscando el **Antónimo**.
 5. Al final podrás ver tus resultados.
 """)
+
+# -------- USUARIOS LISTOS --------
+if "listo" not in st.session_state:
+    st.session_state.listo = False
+
+if not st.session_state.listo:
+    if st.button("Estoy listo"):
+        usuarios_preparados.add(st.session_state.usuario)
+        st.session_state.listo = True
+
+# -------- ESPERA HASTA QUE EL MASTER INICIE --------
+if not experimento_iniciado:
+    st.write("Esperando que el Master inicie el experimento...")
+    st.stop()
 
 # -------- DICCIONARIO DE PALABRAS (SIN REPETIR LA PALABRA EN SU DEFINICIÓN) --------
 diccionario = {
@@ -67,14 +100,6 @@ if "ensayo" not in st.session_state:
     st.session_state.usadas_antonimo = set()  # Inicializa el conjunto para las palabras usadas en la segunda parte
 
 
-# -------- ADMINISTRADOR --------
-if is_master:
-    st.sidebar.success("Eres el administrador")
-    if st.sidebar.button("Reiniciar experimento"):
-        for key in list(st.session_state.keys()):
-            del st.session_state[key]
-        st.rerun()
-
 # -------- BOTÓN DE INICIO --------
 if not st.session_state.experimento_iniciado:
     if st.button("🚀 Comenzar Experimento"):
@@ -90,6 +115,18 @@ if st.session_state.ensayo == 11 and not st.session_state.transicion:
     if st.button("➡️ Continuar"):
         st.rerun()
     st.stop()
+
+# -------- EXPERIMENTO --------
+if "ensayo" not in st.session_state:
+    st.session_state.ensayo = 1
+    st.session_state.resultados = []
+
+# Simulación de ensayo
+st.write(f"**Ensayo {st.session_state.ensayo}/20**")
+if st.button("Responder"):
+    st.session_state.ensayo += 1
+    if st.session_state.ensayo > 20:
+        st.success("🎉 ¡Has completado el experimento!")
 
 # -------- EXPERIMENTO --------
 if st.session_state.ensayo <= 20:
