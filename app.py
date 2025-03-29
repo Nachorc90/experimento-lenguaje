@@ -138,7 +138,7 @@ if st.session_state.ensayo <= 20:
 
     if respuesta:
         t_fin = time.time()
-        tiempo = t_fin - st.session_state.t
+        tiempo = t_fin - st.session_state.t_inicio
 
     if respuesta:
         t_fin = time.time()
