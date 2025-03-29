@@ -21,14 +21,10 @@ diccionario = {
 }
 
 # ---------- INSTRUCCIONES ----------
-st.title("🧪 Experimento de Tiempo de Reacción")
+st.title("🧪 Experimento")
 st.subheader("📄 Instrucciones")
 st.markdown("""
-1. Vas a ver una **definición**.
-2. Debes elegir la opción correcta lo más rápido posible.
-3. Primero harás 10 ensayos buscando el **Significado**.
-4. Después, automáticamente pasarás a 10 ensayos buscando el **Antónimo**.
-5. Al final verás tus resultados.
+A continuación Vas a ver una **definición**. Tras leerla debes elegir la opción correcta lo más rápido posible. Primero harás 10 ensayos buscando el **Significado**. Después, automáticamente pasarás a 10 ensayos buscando el **Antónimo**. Al final verás tus resultados.
 """)
 
 # ---------- VARIABLES DE SESIÓN ----------
