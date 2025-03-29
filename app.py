@@ -12,6 +12,17 @@ st.sidebar.title("Modo Administrador")
 password = st.sidebar.text_input("Ingrese la clave de administrador:", type="password")
 is_master = password == MASTER_PASSWORD
 
+# -------- INSTRUCCIONES --------
+st.title("🧪 Experimento de Tiempo de Reacción")
+
+st.subheader("📄 Instrucciones")
+st.markdown("""
+1. Vas a ver una **definición**.
+2. Deberás elegir la opción correcta lo más rápido posible.
+3. Harás 10 ensayos buscando el **Significado**.
+4. Después, harás 10 ensayos buscando el **Antónimo**.
+5. Al final podrás ver tus resultados.
+""")
 # -------- DICCIONARIO DE PALABRAS --------
 diccionario = {
     "Estado de ánimo positivo y de alegría": {"respuesta": "feliz", "antonimo": "triste"},
@@ -35,6 +46,13 @@ diccionario = {
     "Que es fácil de hacer o entender": {"respuesta": "fácil", "antonimo": "difícil"}
 }
 
+# -------- QR SOLO EN PANTALLA DE INICIO --------
+app_url = "https://experimento-lenguaje-evvnuoczsrg43edwgztyrv.streamlit.app/"
+qr = qrcode.make(app_url)
+qr_bytes = BytesIO()
+qr.save(qr_bytes, format="PNG")
+st.image(qr_bytes, caption="Escanea el QR para acceder al experimento", use_container_width=True)
+
 # -------- VARIABLES DE SESIÓN --------
 if "ensayo" not in st.session_state:
     st.session_state.ensayo = 1
@@ -43,6 +61,15 @@ if "ensayo" not in st.session_state:
     st.session_state.transicion = False
     st.session_state.experimento_iniciado = False
     st.session_state.usadas = set()  # Para evitar repetir definiciones consecutivamente
+
+# -------- ADMINISTRADOR --------
+if is_master:
+    st.sidebar.success("Eres el administrador")
+    if st.sidebar.button("Reiniciar experimento"):
+        for key in list(st.session_state.keys()):
+            del st.session_state[key]
+        st.rerun()
+
 
 # -------- BOTÓN DE INICIO --------
 if not st.session_state.experimento_iniciado:
