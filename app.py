@@ -61,7 +61,9 @@ if "ensayo" not in st.session_state:
     st.session_state.condicion_actual = "Definición → Significado"
     st.session_state.transicion = False
     st.session_state.experimento_iniciado = False
-    st.session_state.usadas = set()
+    st.session_state.usadas_significado = set()  # Inicializa el conjunto para las palabras usadas
+    st.session_state.usadas_antonimo = set()  # Inicializa el conjunto para las palabras usadas en la segunda parte
+
 
 # -------- ADMINISTRADOR --------
 if is_master:
