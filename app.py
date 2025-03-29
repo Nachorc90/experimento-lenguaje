@@ -20,39 +20,54 @@ diccionario = {
     "Que tiene mucha luz": {"respuesta": "claro", "antonimo": "oscuro"}
 }
 
+# ---------- INSTRUCCIONES ----------
 st.title("🧪 Experimento de Tiempo de Reacción")
-st.write(f"**Condición actual:** {config.condicion_global}")
+st.subheader("📄 Instrucciones")
+st.markdown("""
+1. Vas a ver una **definición**.
+2. Debes elegir la opción correcta lo más rápido posible.
+3. Primero harás 10 ensayos buscando el **Significado**.
+4. Después, automáticamente pasarás a 10 ensayos buscando el **Antónimo**.
+5. Al final verás tus resultados.
+""")
 
+# ---------- VARIABLES DE SESIÓN ----------
 if "ensayo" not in st.session_state:
     st.session_state.ensayo = 1
     st.session_state.resultados = []
+    st.session_state.condicion_actual = "Definición → Significado"
+    st.session_state.transicion = False
 
+# ---------- ADMINISTRADOR ----------
 if is_master:
-    st.success("Eres el administrador del experimento")
-    if st.button("Cambiar Condición"):
-        nueva_condicion = "Definición → Antónimo" if config.condicion_global == "Definición → Significado" else "Definición → Significado"
-        with open("config.py", "w") as f:
-            f.write(f'condicion_global = "{nueva_condicion}"')
-        st.success(f"Condición cambiada a: {nueva_condicion}")
+    st.sidebar.success("Eres el administrador")
+    if st.sidebar.button("Reiniciar experimento"):
+        for key in ["ensayo", "resultados", "condicion_actual", "transicion"]:
+            if key in st.session_state:
+                del st.session_state[key]
         st.experimental_rerun()
 
-else:
-    st.info("Esperando instrucciones del administrador.")
+# ---------- LÓGICA DEL EXPERIMENTO ----------
+if st.session_state.ensayo <= 20:
 
-# --- EXPERIMENTO ---
+    # Cambio de condición después de los primeros 10 ensayos
+    if st.session_state.ensayo == 11 and not st.session_state.transicion:
+        st.session_state.condicion_actual = "Definición → Antónimo"
+        st.session_state.transicion = True
+        st.info("✅ Has completado los primeros 10 ensayos.\n\nAhora comenzamos con la condición **Definición → Antónimo**.")
+        st.stop()
 
-if st.session_state.ensayo <= 10:
     if "definicion" not in st.session_state:
         definicion, opciones = random.choice(list(diccionario.items()))
         st.session_state.definicion = definicion
 
-        if config.condicion_global == "Definición → Significado":
+        if st.session_state.condicion_actual == "Definición → Significado":
             correcta = opciones["respuesta"]
         else:
             correcta = opciones["antonimo"]
 
         otra_opcion = random.choice([
-            v["respuesta"] if config.condicion_global == "Definición → Significado" else v["antonimo"]
+            v["respuesta"] if st.session_state.condicion_actual == "Definición → Significado" else v["antonimo"]
             for k, v in diccionario.items() if k != definicion
         ])
 
@@ -64,7 +79,8 @@ if st.session_state.ensayo <= 10:
         st.session_state.t_inicio = time.time()
         st.session_state.respuesta = None
 
-    st.write(f"**Ensayo {st.session_state.ensayo}/10**")
+    st.write(f"**Ensayo {st.session_state.ensayo}/20**")
+    st.write(f"**Condición actual:** {st.session_state.condicion_actual}")
     st.write(f"**Definición:** {st.session_state.definicion}")
 
     respuesta = st.radio(
@@ -92,7 +108,7 @@ if st.session_state.ensayo <= 10:
             "respuesta_correcta": st.session_state.correcta,
             "correcto": correcta,
             "tiempo_reaccion": round(tiempo, 3),
-            "condicion": config.condicion_global
+            "condicion": st.session_state.condicion_actual
         })
 
         # Botón siguiente
@@ -101,12 +117,13 @@ if st.session_state.ensayo <= 10:
             st.session_state.pop("definicion")
             st.experimental_rerun()
 
+# ---------- RESULTADOS ----------
 else:
-    st.success("🎉 ¡Has completado los 10 ensayos!")
+    st.success("🎉 ¡Has completado los 20 ensayos!")
     df = pd.DataFrame(st.session_state.resultados)
     st.write(df)
 
-    # Puedes guardar el archivo si quieres
+    # Guardar CSV
     df.to_csv("resultados.csv", index=False)
 
     # QR
@@ -116,6 +133,7 @@ else:
     qr_bytes = BytesIO()
     qr.save(qr_bytes, format="PNG")
     st.image(qr_bytes, caption="Escanea el QR para acceder al experimento", use_container_width=True)
+
 
 st.image(qr_bytes, caption="Escanea el QR para acceder al experimento", use_container_width=True)
 
