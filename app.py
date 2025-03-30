@@ -92,14 +92,16 @@ c.execute('''CREATE TABLE IF NOT EXISTS resultados (
                 respuesta_correcta TEXT, 
                 correcto BOOLEAN, 
                 tiempo_reaccion REAL)''')
-conn.commit()
 
-# Función para guardar los resultados en la base de datos
-def guardar_resultado(usuario_id, ensayo, definicion, respuesta_usuario, respuesta_correcta, correcto, tiempo_reaccion):
-    c.execute('''INSERT INTO resultados (usuario_id, ensayo, definicion, respuesta_usuario, respuesta_correcta, correcto, tiempo_reaccion)
-                 VALUES (?, ?, ?, ?, ?, ?, ?)''', 
-              (usuario_id, ensayo, definicion, respuesta_usuario, respuesta_correcta, correcto, tiempo_reaccion))
+def guardar_resultado(usuario_id, ensayo, definicion, respuesta, correcta, tiempo):
+    conn = sqlite3.connect('experimento.db')
+    cursor = conn.cursor()
+    cursor.execute('''
+        INSERT INTO resultados (usuario_id, ensayo, definicion, respuesta_usuario, respuesta_correcta, correcto, tiempo_reaccion, condicion)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    ''', (usuario_id, ensayo, definicion, respuesta, correcta, respuesta.lower() == correcta.lower(), tiempo, st.session_state.condicion_actual))
     conn.commit()
+    conn.close()
 
 # Generar un ID único para cada usuario
 usuario_id = str(int(time.time()))  # Usar el tiempo como identificador único
@@ -188,9 +190,45 @@ else:
     st.success("🎉 ¡Has completado los 20 ensayos!")
     st.write(f"Los resultados para el usuario {usuario_id} han sido guardados.")
 
+   # Función para consultar los resultados desde la base de datos
+def obtener_resultados():
+    conn = sqlite3.connect('experimento.db')
+    df = pd.read_sql_query("SELECT * FROM resultados", conn)
+    conn.close()
+    return df
+
+# Muestra los resultados si el administrador o investigador está viendo la aplicación
+if st.session_state.usuario == "admin":  # Verifica si es el administrador
+    st.header("Resultados del Experimento")
     
+    # Obtener los resultados de la base de datos
+    df = obtener_resultados()
 
+    # Mostrar los resultados en una tabla
+    st.write("**Resultados de todos los usuarios**:")
+    st.write(df)
 
+    # Opción para descargar los resultados como un archivo CSV
+    st.download_button("📥 Descargar Resultados", data=df.to_csv().encode(), file_name="resultados.csv")
 
+else:
+    st.write("¡El experimento ha comenzado! El administrador verá los resultados.")
+
+# Formulario de inicio de sesión
+if "usuario" not in st.session_state:
+    st.session_state.usuario = None
+
+if st.session_state.usuario is None:
+    usuario = st.text_input("admin")
+    contraseña = st.text_input("experimento123", type="password")
+
+    if st.button("Iniciar sesión"):
+        if usuario == "admin" and contraseña == "admin123":  # Puedes cambiar las credenciales por otras
+            st.session_state.usuario = "admin"
+            st.success("¡Has iniciado sesión como administrador!")
+        else:
+            st.error("Credenciales incorrectas")
+else:
+    st.write(f"¡Bienvenido {st.session_state.usuario}!")
 
 
