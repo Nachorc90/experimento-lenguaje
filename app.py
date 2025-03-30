@@ -24,26 +24,6 @@ qr_bytes = BytesIO()
 qr.save(qr_bytes, format="PNG")
 st.image(qr_bytes, caption="Escanea el QR para acceder al experimento", use_container_width=True)
 
-
-# -------- INICIO DE SESIÓN --------
-if "usuario" not in st.session_state:
-    st.session_state.usuario = None  # Inicializa la clave si no existe
-
-nombre_usuario = st.text_input("Ingrese su nombre:", key="usuario")
-if nombre_usuario:
-    st.session_state.usuario = nombre_usuario
-    usuarios_conectados.add(nombre_usuario)
-
-# -------- ADMINISTRADOR --------
-if es_master:
-    st.sidebar.success("Eres el administrador")
-    st.sidebar.write(f"Usuarios conectados: {len(usuarios_conectados)}")
-    st.sidebar.write(f"Usuarios preparados: {len(usuarios_preparados)}")
-    
-    if st.sidebar.button("Iniciar experimento"):
-        experimento_iniciado = True
-        st.session_state.experimento_iniciado = True
-
 # -------- INSTRUCCIONES --------
 st.title("🧪 Experimento de Tiempo de Reacción")
 
@@ -64,6 +44,15 @@ if not st.session_state.listo:
     if st.button("Estoy listo"):
         usuarios_preparados.add(st.session_state.usuario)
         st.session_state.listo = True
+
+# -------- ADMINISTRADOR --------
+if es_master:
+    st.sidebar.success("Eres el administrador")
+    st.sidebar.write(f"Usuarios preparados: {len(usuarios_preparados)}")
+    
+    if st.sidebar.button("Iniciar experimento"):
+        experimento_iniciado = True
+        st.session_state.experimento_iniciado = True
 
 # -------- ESPERA HASTA QUE EL MASTER INICIE --------
 if not experimento_iniciado:
@@ -92,7 +81,6 @@ diccionario = {
     "Situado a gran distancia": {"respuesta": "lejos", "antonimo": "cerca"},
     "Que no requiere mucho esfuerzo para entenderse": {"respuesta": "fácil", "antonimo": "difícil"}
 }
-
 
 # -------- VARIABLES DE SESIÓN --------
 if "ensayo" not in st.session_state:
