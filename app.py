@@ -140,10 +140,13 @@ if st.session_state.ensayo <= 20:
         opciones = diccionario[definicion]
         correcta = opciones["respuesta"] if st.session_state.condicion_actual == "Definición → Significado" else opciones["antonimo"]
 
-        # Agregar una tercera opción distractora aleatoria que no sea la correcta ni el antónimo
-        otras_palabras = list(set(diccionario.keys()) - {opciones["respuesta"], opciones["antonimo"]})
-        distractor = random.choice(otras_palabras) if otras_palabras else "error"
+        # Agregar una tercera opción distractora válida que no sea la respuesta correcta ni el antónimo
+        # Para eso tomamos otras palabras de diccionario que no sean la respuesta ni el antónimo
+        respuestas_posibles = [opciones["respuesta"], opciones["antonimo"]]
+        otras_palabras = [v["respuesta"] for k, v in diccionario.items() if v["respuesta"] not in respuestas_posibles]
+        distractor = random.choice(otras_palabras)
 
+        # Crear lista de opciones y mezclar
         lista_opciones = [correcta, opciones["antonimo"], distractor]
         random.shuffle(lista_opciones)
 
