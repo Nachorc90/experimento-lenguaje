@@ -141,7 +141,6 @@ if st.session_state.ensayo <= 20:
         correcta = opciones["respuesta"] if st.session_state.condicion_actual == "Definición → Significado" else opciones["antonimo"]
 
         # Agregar una tercera opción distractora válida que no sea la respuesta correcta ni el antónimo
-        # Para eso tomamos otras palabras de diccionario que no sean la respuesta ni el antónimo
         respuestas_posibles = [opciones["respuesta"], opciones["antonimo"]]
         otras_palabras = [v["respuesta"] for k, v in diccionario.items() if v["respuesta"] not in respuestas_posibles]
         distractor = random.choice(otras_palabras)
@@ -163,10 +162,24 @@ if st.session_state.ensayo <= 20:
     # Mostrar opciones y capturar respuesta
     respuesta = st.radio("Selecciona la opción correcta:", st.session_state.lista_opciones, index=None)
 
-    # Si el usuario selecciona una opción, registrar y avanzar
-    if respuesta is not None:
+    if respuesta:
+        # Calcular el tiempo de respuesta
         t_fin = time.time()
         tiempo = t_fin - st.session_state.t_inicio
+
+        # Determinar si la respuesta es correcta o incorrecta
+        es_correcta = respuesta.lower() == st.session_state.correcta.lower()
+
+        # Mostrar el resultado de la respuesta
+        if es_correcta:
+            st.success("¡Respuesta correcta! ✅")
+        else:
+            st.error(f"Respuesta incorrecta. La respuesta correcta era: {st.session_state.correcta} ❌")
+
+        # Mostrar el tiempo de respuesta
+        st.write(f"Tiempo de respuesta: {tiempo:.2f} segundos")
+
+        # Guardar resultado
         guardar_resultado(
             st.session_state.usuario,
             st.session_state.ensayo,
@@ -176,14 +189,15 @@ if st.session_state.ensayo <= 20:
             tiempo
         )
 
-        # Avanzar al siguiente ensayo
-        st.session_state.ensayo += 1
-        st.session_state.pop("definicion")  # Eliminar la definición actual
-        st.rerun()  # Recargar la app para avanzar automáticamente
+        # Mostrar botón de continuar
+        if st.button("Continuar"):
+            st.session_state.ensayo += 1
+            st.session_state.pop("definicion")  # Eliminar la definición actual
+            st.rerun()  # Recargar la app para avanzar al siguiente ensayo
 
-# Mostrar mensaje de finalización solo cuando se completen los 20 ensayos
-if st.session_state.ensayo > 20:
+else:
     st.success("🎉 ¡Has completado los 20 ensayos!")
+
 
 
 
