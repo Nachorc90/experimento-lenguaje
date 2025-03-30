@@ -122,7 +122,7 @@ if st.session_state.usuario == "admin":
     df = pd.read_sql_query("SELECT * FROM resultados", conn)
     st.write("**Resultados de todos los usuarios**:")
     st.write(df)
-    st.download_button("📥 Descargar Resultados", data=df.to_csv().encode(), file_name="resultados.csv")
+   st.download_button("📥 Descargar Resultados", data=df.to_csv().encode(), file_name="resultados.csv", key="descargar_resultados")
 else:
     st.write("¡El experimento ha comenzado! El administrador verá los resultados.")
 
@@ -201,25 +201,25 @@ if st.session_state.ensayo <= 20:
         key=f"respuesta_{st.session_state.ensayo}"
     )
 
-    if respuesta:
-        t_fin = time.time()
-        tiempo = t_fin - st.session_state.t_inicio
-        correcta = respuesta.lower() == st.session_state.correcta.lower()
-        st.write(f"⏱️ Tiempo de reacción: {tiempo:.3f} segundos")
-        
-        if correcta:
-            st.success("✅ ¡Correcto!")
-        else:
-            st.error(f"❌ Incorrecto. La respuesta era: {st.session_state.correcta}")
-        
-        # Guardar el resultado del ensayo en la base de datos
-        guardar_resultado(usuario_id, st.session_state.ensayo, st.session_state.definicion, respuesta, st.session_state.correcta, correcta, tiempo)
+   if respuesta:
+    t_fin = time.time()
+    tiempo = t_fin - st.session_state.t_inicio
+    correcta = respuesta.lower() == st.session_state.correcta.lower()
+    st.write(f"⏱️ Tiempo de reacción: {tiempo:.3f} segundos")
+    
+    if correcta:
+        st.success("✅ ¡Correcto!")
+    else:
+        st.error(f"❌ Incorrecto. La respuesta era: {st.session_state.correcta}")
 
-        # Botón siguiente
-        if st.button("➡️ Siguiente"):
-            st.session_state.ensayo += 1
-            st.session_state.pop("definicion")
-            st.rerun()
+    # Guardar el resultado en la base de datos
+    guardar_resultado(usuario_id, st.session_state.ensayo, st.session_state.definicion, respuesta, st.session_state.correcta, tiempo)
+
+    # Mostrar botón "Siguiente" SIEMPRE tras responder
+    if st.button("➡️ Siguiente"):
+        st.session_state.ensayo += 1
+        st.session_state.pop("definicion")
+        st.rerun()
 else:
     st.success("🎉 ¡Has completado los 20 ensayos!")
     st.write(f"Los resultados para el usuario {usuario_id} han sido guardados.")
