@@ -19,21 +19,6 @@ qr_bytes = BytesIO()
 qr.save(qr_bytes, format="PNG")
 st.image(qr_bytes, caption="Escanea el QR para acceder al experimento", use_container_width=True)
 
-# -------- INICIO DE SESIÓN ADMINISTRADOR --------
-st.sidebar.title("Modo Administrador")
-password = st.sidebar.text_input("Ingrese la clave de administrador:", type="password")
-if st.sidebar.button("Iniciar sesión"):
-    if password == MASTER_PASSWORD:
-        st.session_state.es_master = True
-    else:
-        st.sidebar.error("Contraseña incorrecta")
-
-if st.session_state.get("es_master", False):
-    st.sidebar.success("Eres el administrador")
-    st.sidebar.write(f"Usuarios preparados: {len(usuarios_preparados)}")
-    if st.sidebar.button("Iniciar experimento"):
-        st.session_state.experimento_iniciado = True
-
 
 
 # -------- INSTRUCCIONES --------
@@ -48,19 +33,7 @@ st.markdown("""
 5. Al final podrás ver tus resultados.
 """)
 
-# -------- USUARIOS LISTOS --------
-if "listo" not in st.session_state:
-    st.session_state.listo = False
 
-if not st.session_state.listo:
-    if st.button("Estoy listo"):
-        usuarios_preparados.add(len(usuarios_preparados) + 1)  # Usa un identificador genérico
-        st.session_state.listo = True
-
-# -------- ESPERA HASTA QUE EL MASTER INICIE --------
-if not st.session_state.get("experimento_iniciado", False):
-    st.write("Esperando que el Master inicie el experimento...")
-    st.stop()
 
 # -------- DICCIONARIO DE PALABRAS (SIN REPETIR LA PALABRA EN SU DEFINICIÓN) --------
 diccionario = {
