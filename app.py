@@ -115,7 +115,7 @@ if not st.session_state.experimento_iniciado:
     else:
         st.stop()
 
-# -------- EXPERIMENTO --------
+# -------EXPERIMENTO--------
 if st.session_state.ensayo <= 20:
     if "definicion" not in st.session_state:
         # Determinar el conjunto de palabras usadas según la condición actual
@@ -136,42 +136,52 @@ if st.session_state.ensayo <= 20:
         definicion = random.choice(definiciones_disponibles)
         usadas.add(definicion)
 
+        # Obtener las opciones de respuesta
         opciones = diccionario[definicion]
         correcta = opciones["respuesta"] if st.session_state.condicion_actual == "Definición → Significado" else opciones["antonimo"]
 
-        lista_opciones = [correcta, opciones["antonimo"] if correcta == opciones["respuesta"] else opciones["respuesta"]]
+        # Agregar una tercera opción distractora aleatoria que no sea la correcta ni el antónimo
+        otras_palabras = list(set(diccionario.keys()) - {opciones["respuesta"], opciones["antonimo"]})
+        distractor = random.choice(otras_palabras) if otras_palabras else "error"
+
+        lista_opciones = [correcta, opciones["antonimo"], distractor]
         random.shuffle(lista_opciones)
 
+        # Guardar en la sesión
         st.session_state.definicion = definicion
         st.session_state.correcta = correcta
         st.session_state.lista_opciones = lista_opciones
         st.session_state.t_inicio = time.time()
 
+    # Mostrar ensayo
     st.write(f"**Ensayo {st.session_state.ensayo}/20**")
     st.write(f"**Definición:** {st.session_state.definicion}")
 
-respuesta = st.radio("Selecciona la opción correcta:", st.session_state.lista_opciones, index=None)
+    # Mostrar opciones y capturar respuesta
+    respuesta = st.radio("Selecciona la opción correcta:", st.session_state.lista_opciones, index=None)
 
-if respuesta is not None:  # Se ejecuta en cuanto el usuario elige una opción
-    t_fin = time.time()
-    tiempo = t_fin - st.session_state.t_inicio
-    correcta = respuesta.lower() == st.session_state.correcta.lower()
+    # Si el usuario selecciona una opción, registrar y avanzar
+    if respuesta is not None:
+        t_fin = time.time()
+        tiempo = t_fin - st.session_state.t_inicio
+        guardar_resultado(
+            st.session_state.usuario,
+            st.session_state.ensayo,
+            st.session_state.definicion,
+            respuesta,
+            st.session_state.correcta,
+            tiempo
+        )
 
-    guardar_resultado(
-        st.session_state.usuario,
-        st.session_state.ensayo,
-        st.session_state.definicion,
-        respuesta,
-        st.session_state.correcta,
-        tiempo
-    )
+        # Avanzar al siguiente ensayo
+        st.session_state.ensayo += 1
+        st.session_state.pop("definicion")  # Eliminar la definición actual
+        st.rerun()  # Recargar la app para avanzar automáticamente
 
-    # Avanzar al siguiente ensayo
-    st.session_state.ensayo += 1
-    st.session_state.pop("definicion")  # Eliminar la definición actual
-    st.rerun()  # Recargar la app para avanzar automáticamente
-else:
+# Mostrar mensaje de finalización solo cuando se completen los 20 ensayos
+if st.session_state.ensayo > 20:
     st.success("🎉 ¡Has completado los 20 ensayos!")
+
 
 
 
