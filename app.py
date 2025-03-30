@@ -12,23 +12,29 @@ usuarios_preparados = set()
 usuarios_conectados = set()
 experimento_iniciado = False
 
-st.sidebar.title("Modo Administrador")
-password = st.sidebar.text_input("Ingrese la clave de administrador:", type="password")
-is_master = password == MASTER_PASSWORD
-
-if is_master:
-    st.sidebar.success("Eres el administrador")
-    st.sidebar.write(f"Usuarios preparados: {len(usuarios_preparados)}")
-    
-    if st.sidebar.button("Iniciar experimento"):
-        experimento_iniciado = True
-        st.session_state.experimento_iniciado = True
 # -------- QR SOLO EN PANTALLA DE INICIO --------
 app_url = "https://experimento-lenguaje-evvnuoczsrg43edwgztyrv.streamlit.app/"
 qr = qrcode.make(app_url)
 qr_bytes = BytesIO()
 qr.save(qr_bytes, format="PNG")
 st.image(qr_bytes, caption="Escanea el QR para acceder al experimento", use_container_width=True)
+
+# -------- INICIO DE SESIÓN ADMINISTRADOR --------
+st.sidebar.title("Modo Administrador")
+password = st.sidebar.text_input("Ingrese la clave de administrador:", type="password")
+if st.sidebar.button("Iniciar sesión"):
+    if password == MASTER_PASSWORD:
+        st.session_state.es_master = True
+    else:
+        st.sidebar.error("Contraseña incorrecta")
+
+if st.session_state.get("es_master", False):
+    st.sidebar.success("Eres el administrador")
+    st.sidebar.write(f"Usuarios preparados: {len(usuarios_preparados)}")
+    if st.sidebar.button("Iniciar experimento"):
+        st.session_state.experimento_iniciado = True
+
+
 
 # -------- INSTRUCCIONES --------
 st.title("🧪 Experimento de Tiempo de Reacción")
@@ -48,11 +54,11 @@ if "listo" not in st.session_state:
 
 if not st.session_state.listo:
     if st.button("Estoy listo"):
-        usuarios_preparados.add(st.session_state.usuario)
+        usuarios_preparados.add(len(usuarios_preparados) + 1)  # Usa un identificador genérico
         st.session_state.listo = True
 
 # -------- ESPERA HASTA QUE EL MASTER INICIE --------
-if not experimento_iniciado:
+if not st.session_state.get("experimento_iniciado", False):
     st.write("Esperando que el Master inicie el experimento...")
     st.stop()
 
@@ -107,45 +113,15 @@ if st.session_state.ensayo == 11 and not st.session_state.transicion:
     st.stop()
 
 # -------- EXPERIMENTO --------
-if "ensayo" not in st.session_state:
-    st.session_state.ensayo = 1
-    st.session_state.resultados = []
-
-# Simulación de ensayo
-st.write(f"**Ensayo {st.session_state.ensayo}/20**")
-if st.button("Responder"):
-    st.session_state.ensayo += 1
-    if st.session_state.ensayo > 20:
-        st.success("🎉 ¡Has completado el experimento!")
-
-# -------- EXPERIMENTO --------
 if st.session_state.ensayo <= 20:
-
     if "definicion" not in st.session_state:
-
-        # Determinar el conjunto de palabras usadas según la condición actual
-        if st.session_state.condicion_actual == "Definición → Significado":
-            usadas = st.session_state.usadas_significado
-        else:
-            usadas = st.session_state.usadas_antonimo
-
-        # Seleccionar una definición que no se haya usado en esta condición
+        usadas = st.session_state.usadas_significado if st.session_state.condicion_actual == "Definición → Significado" else st.session_state.usadas_antonimo
         definicion = random.choice([k for k in diccionario.keys() if k not in usadas])
         usadas.add(definicion)
 
         opciones = diccionario[definicion]
-
-        if st.session_state.condicion_actual == "Definición → Significado":
-            correcta = opciones["respuesta"]
-        else:
-            correcta = opciones["antonimo"]
-
-        otra_opcion = random.choice([
-            v["respuesta"] if st.session_state.condicion_actual == "Definición → Significado" else v["antonimo"]
-            for k, v in diccionario.items() if k != definicion
-        ])
-
-        # Crear lista de opciones y aleatorizarlas
+        correcta = opciones["respuesta"] if st.session_state.condicion_actual == "Definición → Significado" else opciones["antonimo"]
+        otra_opcion = random.choice([v["respuesta"] if st.session_state.condicion_actual == "Definición → Significado" else v["antonimo"] for k, v in diccionario.items() if k != definicion])
         lista_opciones = [correcta, otra_opcion, opciones["antonimo"] if correcta == opciones["respuesta"] else opciones["respuesta"]]
         random.shuffle(lista_opciones)
 
@@ -155,57 +131,29 @@ if st.session_state.ensayo <= 20:
         st.session_state.t_inicio = time.time()
 
     st.write(f"**Ensayo {st.session_state.ensayo}/20**")
-    st.write(f"**Condición actual:** {st.session_state.condicion_actual}")
     st.write(f"**Definición:** {st.session_state.definicion}")
 
-    respuesta = st.radio(
-        "Selecciona la opción correcta:",
-        st.session_state.lista_opciones,
-        index=None,
-        key=f"respuesta_{st.session_state.ensayo}"
-    )
+    respuesta = st.radio("Selecciona la opción correcta:", st.session_state.lista_opciones, index=None, key=f"respuesta_{st.session_state.ensayo}")
 
     if respuesta:
-        t_fin = time.time()
-        tiempo = t_fin - st.session_state.t_inicio
-
-    if respuesta:
-        t_fin = time.time()
-        tiempo = t_fin - st.session_state.t_inicio
+        tiempo = time.time() - st.session_state.t_inicio
         correcta = respuesta.lower() == st.session_state.correcta.lower()
         st.write(f"⏱️ Tiempo de reacción: {tiempo:.3f} segundos")
         if correcta:
             st.success("✅ ¡Correcto!")
         else:
             st.error(f"❌ Incorrecto. La respuesta era: {st.session_state.correcta}")
-
-        # Guardar resultado
-        st.session_state.resultados.append({
-            "ensayo": st.session_state.ensayo,
-            "definicion": st.session_state.definicion,
-            "respuesta_usuario": respuesta,
-            "respuesta_correcta": st.session_state.correcta,
-            "correcto": correcta,
-            "tiempo_reaccion": round(tiempo, 3),
-            "condicion": st.session_state.condicion_actual
-        })
-
-        # Botón siguiente
+        st.session_state.resultados.append({"ensayo": st.session_state.ensayo, "definicion": st.session_state.definicion, "respuesta_usuario": respuesta, "respuesta_correcta": st.session_state.correcta, "correcto": correcta, "tiempo_reaccion": round(tiempo, 3), "condicion": st.session_state.condicion_actual})
         if st.button("➡️ Siguiente"):
             st.session_state.ensayo += 1
             st.session_state.pop("definicion")
             st.rerun()
-
-# -------- RESULTADOS --------
 else:
     st.success("🎉 ¡Has completado los 20 ensayos!")
-
     df = pd.DataFrame(st.session_state.resultados)
     st.write(df)
-
-    # Guardar CSV
-    df.to_csv("resultados.csv", index=False)
     st.download_button("📥 Descargar Resultados", data=df.to_csv().encode(), file_name="resultados.csv")
+
 
 
 
