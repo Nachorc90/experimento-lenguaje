@@ -55,10 +55,10 @@ diccionario = {
     "Falta de luz o de claridad": {"respuesta": "oscuro", "antonimo": "claro"},
     "Que no tiene mucha altura": {"respuesta": "bajo", "antonimo": "alto"},
     "Que tiene una gran capacidad para aprender o entender": {"respuesta": "inteligente", "antonimo": "tonto"},
-    "Que tiene un color rojo o parecido": {"respuesta": "rojo", "antonimo": "verde"},
+    "Que tiene mucho color": {"respuesta": "vivo", "antonimo": "apagado"},
     "Que tiene un fuerte deseo o impulso de hacer algo": {"respuesta": "ambicioso", "antonimo": "apático"},
     "Que se refiere a algo que ha sido creado o producido por un ser humano": {"respuesta": "artificial", "antonimo": "natural"},
-    "Que pertenece a otro lugar o tiempo": {"respuesta": "extranjero", "antonimo": "local"},
+    "Que pertenece a otro país": {"respuesta": "extranjero", "antonimo": "local"},
     "Que tiene una gran capacidad para hacer cosas": {"respuesta": "hábil", "antonimo": "torpe"},
     "Que provoca alegría o placer": {"respuesta": "divertido", "antonimo": "aburrido"},
     "Que se caracteriza por tener una forma redonda": {"respuesta": "redondo", "antonimo": "cuadrado"},
@@ -128,20 +128,23 @@ if not st.session_state.experimento_iniciado:
 
 # -------- EXPERIMENTO --------
 if st.session_state.ensayo <= 20:
-    if "definicion" not in st.session_state:
-        # Reiniciar las definiciones usadas después de los 10 ensayos
-        if st.session_state.ensayo == 11:
-            # Reiniciar las definiciones usadas cuando comience la segunda condición
-            st.session_state.usadas_significado = set()
+    if st.session_state.ensayo == 11 and not st.session_state.transicion:
+        # Mostrar mensaje de cambio de condición
+        st.warning("¡Has completado la primera parte del experimento! Ahora pasaremos a la segunda fase: **Definición → Antónimo**.")
+        
+        # Botón para continuar con la segunda fase
+        if st.button("Continuar con la segunda fase"):
+            st.session_state.transicion = True  # Marcar que ya se mostró la transición
+            st.session_state.usadas_significado = set()  # Reiniciar palabras usadas
             st.session_state.usadas_antonimo = set()
-            # Cambiar la condición a la segunda
             st.session_state.condicion_actual = "Definición → Antónimo"
-
-        # Determinar el conjunto de palabras usadas según la condición actual
-        if st.session_state.condicion_actual == "Definición → Significado":
-            usadas = st.session_state.usadas_significado
+            st.rerun()  # Recargar la app para continuar
         else:
-            usadas = st.session_state.usadas_antonimo
+            st.stop()  # Detener ejecución hasta que el usuario haga clic
+
+    if "definicion" not in st.session_state:
+        # Determinar el conjunto de palabras usadas según la condición actual
+        usadas = st.session_state.usadas_significado if st.session_state.condicion_actual == "Definición → Significado" else st.session_state.usadas_antonimo
 
         # Filtrar las definiciones disponibles
         definiciones_disponibles = [k for k in diccionario.keys() if k not in usadas]
@@ -155,17 +158,19 @@ if st.session_state.ensayo <= 20:
         definicion = random.choice(definiciones_disponibles)
         usadas.add(definicion)
 
-        # Obtener las opciones de respuesta
+        # Obtener la respuesta correcta según la condición
         opciones = diccionario[definicion]
         correcta = opciones["respuesta"] if st.session_state.condicion_actual == "Definición → Significado" else opciones["antonimo"]
 
-        # Agregar una tercera opción distractora válida que no sea la respuesta correcta ni el antónimo
+        # Generar opciones de respuesta asegurando que sean únicas
         respuestas_posibles = [opciones["respuesta"], opciones["antonimo"]]
         otras_palabras = [v["respuesta"] for k, v in diccionario.items() if v["respuesta"] not in respuestas_posibles]
-        distractor = random.choice(otras_palabras)
+
+        # Seleccionar dos opciones únicas que no sean la respuesta correcta
+        distractores = random.sample([w for w in otras_palabras if w != correcta], 2)
 
         # Crear lista de opciones y mezclar
-        lista_opciones = [correcta, opciones["antonimo"], distractor]
+        lista_opciones = [correcta] + distractores
         random.shuffle(lista_opciones)
 
         # Guardar en la sesión
@@ -216,6 +221,7 @@ if st.session_state.ensayo <= 20:
 
 else:
     st.success("🎉 ¡Has completado los 20 ensayos!")
+
 
 
 
