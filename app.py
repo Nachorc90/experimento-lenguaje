@@ -115,9 +115,17 @@ if not st.session_state.experimento_iniciado:
     else:
         st.stop()
 
-# -------EXPERIMENTO--------
+# -------- EXPERIMENTO --------
 if st.session_state.ensayo <= 20:
     if "definicion" not in st.session_state:
+        # Reiniciar las definiciones usadas después de los 10 ensayos
+        if st.session_state.ensayo == 11:
+            # Reiniciar las definiciones usadas cuando comience la segunda condición
+            st.session_state.usadas_significado = set()
+            st.session_state.usadas_antonimo = set()
+            # Cambiar la condición a la segunda
+            st.session_state.condicion_actual = "Definición → Antónimo"
+
         # Determinar el conjunto de palabras usadas según la condición actual
         if st.session_state.condicion_actual == "Definición → Significado":
             usadas = st.session_state.usadas_significado
@@ -197,6 +205,7 @@ if st.session_state.ensayo <= 20:
 
 else:
     st.success("🎉 ¡Has completado los 20 ensayos!")
+
 
 
 
