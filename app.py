@@ -150,20 +150,26 @@ if st.session_state.ensayo <= 20:
     st.write(f"**Ensayo {st.session_state.ensayo}/20**")
     st.write(f"**Definición:** {st.session_state.definicion}")
 
-   respuesta = st.radio("Selecciona la opción correcta:", st.session_state.lista_opciones, index=None)
+respuesta = st.radio("Selecciona la opción correcta:", st.session_state.lista_opciones, index=None)
 
 if respuesta is not None:  # Se ejecuta en cuanto el usuario elige una opción
     t_fin = time.time()
     tiempo = t_fin - st.session_state.t_inicio
     correcta = respuesta.lower() == st.session_state.correcta.lower()
 
-    guardar_resultado(st.session_state.usuario, st.session_state.ensayo, st.session_state.definicion, respuesta, st.session_state.correcta, tiempo)
+    guardar_resultado(
+        st.session_state.usuario,
+        st.session_state.ensayo,
+        st.session_state.definicion,
+        respuesta,
+        st.session_state.correcta,
+        tiempo
+    )
 
     # Avanzar al siguiente ensayo
     st.session_state.ensayo += 1
     st.session_state.pop("definicion")  # Eliminar la definición actual
     st.rerun()  # Recargar la app para avanzar automáticamente
-
 else:
     st.success("🎉 ¡Has completado los 20 ensayos!")
 
