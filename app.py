@@ -1,6 +1,7 @@
 import streamlit as st
 import random
 import time
+import sqlite3
 import pandas as pd
 import qrcode
 from io import BytesIO
@@ -22,15 +23,25 @@ st.image(qr_bytes, caption="Escanea el QR para acceder al experimento", use_cont
 
 
 # -------- INSTRUCCIONES --------
-st.title("🧪 Experimento de Tiempo de Reacción")
+st.title("🧪 Experimento")
 
-st.subheader("📄 Instrucciones")
+# ---------- Mostrar las Normas ----------
+st.markdown("## Normas del Experimento")
 st.markdown("""
-1. Vas a ver una **definición**.
-2. Deberás elegir la opción correcta lo más rápido posible.
-3. Harás 10 ensayos buscando el **Significado**.
-4. Después, harás 10 ensayos buscando el **Antónimo**.
-5. Al final podrás ver tus resultados.
+1. **Instrucciones Iniciales**:
+    - El experimento se dividirá en 20 ensayos en total.
+    - Primero se realizarán **10 ensayos con la condición "Definición → Significado"**.
+    - Luego, se realizarán **10 ensayos con la condición "Definición → Antónimo"**.
+    
+2. **Modo de Respuesta**:
+    - En cada ensayo, se te mostrará una definición y tendrás que seleccionar la opción correcta.
+    - Cada ensayo tendrá un límite de tiempo para responder, y tu tiempo de reacción será registrado.
+
+3. **Al Finalizar**:
+    - Una vez que completes los 20 ensayos, podrás ver tus resultados y descargarlos en formato CSV.
+
+4. **Para Comenzar**:
+    - Una vez que hayas leído estas instrucciones y estés listo para comenzar, haz clic en el botón **"Estoy listo"**.
 """)
 
 
@@ -68,6 +79,30 @@ if "ensayo" not in st.session_state:
     st.session_state.usadas_significado = set()  # Inicializa el conjunto para las palabras usadas
     st.session_state.usadas_antonimo = set()  # Inicializa el conjunto para las palabras usadas en la segunda parte
 
+#--------- Conectar con la base de datos SQLite-------
+conn = sqlite3.connect('experimento.db')
+c = conn.cursor()
+
+# Crear la tabla si no existe
+c.execute('''CREATE TABLE IF NOT EXISTS resultados (
+                usuario_id TEXT, 
+                ensayo INTEGER, 
+                definicion TEXT, 
+                respuesta_usuario TEXT, 
+                respuesta_correcta TEXT, 
+                correcto BOOLEAN, 
+                tiempo_reaccion REAL)''')
+conn.commit()
+
+# Función para guardar los resultados en la base de datos
+def guardar_resultado(usuario_id, ensayo, definicion, respuesta_usuario, respuesta_correcta, correcto, tiempo_reaccion):
+    c.execute('''INSERT INTO resultados (usuario_id, ensayo, definicion, respuesta_usuario, respuesta_correcta, correcto, tiempo_reaccion)
+                 VALUES (?, ?, ?, ?, ?, ?, ?)''', 
+              (usuario_id, ensayo, definicion, respuesta_usuario, respuesta_correcta, correcto, tiempo_reaccion))
+    conn.commit()
+
+# Generar un ID único para cada usuario
+usuario_id = str(int(time.time()))  # Usar el tiempo como identificador único
 
 # -------- BOTÓN DE INICIO --------
 if not st.session_state.experimento_iniciado:
@@ -85,16 +120,33 @@ if st.session_state.ensayo == 11 and not st.session_state.transicion:
         st.rerun()
     st.stop()
 
-# -------- EXPERIMENTO --------
+# -# -------- EXPERIMENTO --------
 if st.session_state.ensayo <= 20:
     if "definicion" not in st.session_state:
-        usadas = st.session_state.usadas_significado if st.session_state.condicion_actual == "Definición → Significado" else st.session_state.usadas_antonimo
+
+        # Determinar el conjunto de palabras usadas según la condición actual
+        if st.session_state.condicion_actual == "Definición → Significado":
+            usadas = st.session_state.usadas_significado
+        else:
+            usadas = st.session_state.usadas_antonimo
+
+        # Seleccionar una definición que no se haya usado en esta condición
         definicion = random.choice([k for k in diccionario.keys() if k not in usadas])
         usadas.add(definicion)
 
         opciones = diccionario[definicion]
-        correcta = opciones["respuesta"] if st.session_state.condicion_actual == "Definición → Significado" else opciones["antonimo"]
-        otra_opcion = random.choice([v["respuesta"] if st.session_state.condicion_actual == "Definición → Significado" else v["antonimo"] for k, v in diccionario.items() if k != definicion])
+
+        if st.session_state.condicion_actual == "Definición → Significado":
+            correcta = opciones["respuesta"]
+        else:
+            correcta = opciones["antonimo"]
+
+        otra_opcion = random.choice([
+            v["respuesta"] if st.session_state.condicion_actual == "Definición → Significado" else v["antonimo"]
+            for k, v in diccionario.items() if k != definicion
+        ])
+
+        # Crear lista de opciones y aleatorizarlas
         lista_opciones = [correcta, otra_opcion, opciones["antonimo"] if correcta == opciones["respuesta"] else opciones["respuesta"]]
         random.shuffle(lista_opciones)
 
@@ -106,31 +158,37 @@ if st.session_state.ensayo <= 20:
     st.write(f"**Ensayo {st.session_state.ensayo}/20**")
     st.write(f"**Definición:** {st.session_state.definicion}")
 
-    respuesta = st.radio("Selecciona la opción correcta:", st.session_state.lista_opciones, index=None, key=f"respuesta_{st.session_state.ensayo}")
+    respuesta = st.radio(
+        "Selecciona la opción correcta:",
+        st.session_state.lista_opciones,
+        index=None,
+        key=f"respuesta_{st.session_state.ensayo}"
+    )
 
     if respuesta:
-        tiempo = time.time() - st.session_state.t_inicio
+        t_fin = time.time()
+        tiempo = t_fin - st.session_state.t_inicio
         correcta = respuesta.lower() == st.session_state.correcta.lower()
         st.write(f"⏱️ Tiempo de reacción: {tiempo:.3f} segundos")
+        
         if correcta:
             st.success("✅ ¡Correcto!")
         else:
             st.error(f"❌ Incorrecto. La respuesta era: {st.session_state.correcta}")
-        st.session_state.resultados.append({"ensayo": st.session_state.ensayo, "definicion": st.session_state.definicion, "respuesta_usuario": respuesta, "respuesta_correcta": st.session_state.correcta, "correcto": correcta, "tiempo_reaccion": round(tiempo, 3), "condicion": st.session_state.condicion_actual})
+        
+        # Guardar el resultado del ensayo en la base de datos
+        guardar_resultado(usuario_id, st.session_state.ensayo, st.session_state.definicion, respuesta, st.session_state.correcta, correcta, tiempo)
+
+        # Botón siguiente
         if st.button("➡️ Siguiente"):
             st.session_state.ensayo += 1
             st.session_state.pop("definicion")
             st.rerun()
 else:
     st.success("🎉 ¡Has completado los 20 ensayos!")
-    df = pd.DataFrame(st.session_state.resultados)
-    st.write(df)
-    st.download_button("📥 Descargar Resultados", data=df.to_csv().encode(), file_name="resultados.csv")
+    st.write(f"Los resultados para el usuario {usuario_id} han sido guardados.")
 
-
-
-
-
+    
 
 
 
