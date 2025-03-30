@@ -116,15 +116,18 @@ def guardar_resultado(usuario_id, ensayo, definicion, respuesta, correcta, tiemp
 # Generar un ID único para cada usuario
 usuario_id = str(int(time.time()))  # Usar el tiempo como identificador único
 
-# -------- INTERFAZ Y LÓGICA DEL EXPERIMENTO --------
-if st.session_state.usuario == "admin":
+if st.session_state.usuario == "admin":  # Verifica si es el administrador
     st.header("Resultados del Experimento")
-    df = pd.read_sql_query("SELECT * FROM resultados", conn)
+    
+    # Obtener los resultados de la base de datos
+    df = obtener_resultados()
+
+    # Mostrar los resultados en una tabla
     st.write("**Resultados de todos los usuarios**:")
     st.write(df)
-   st.download_button("📥 Descargar Resultados", data=df.to_csv().encode(), file_name="resultados.csv", key="descargar_resultados")
-else:
-    st.write("¡El experimento ha comenzado! El administrador verá los resultados.")
+
+    # Opción para descargar los resultados como un archivo CSV
+    st.download_button("📥 Descargar Resultados", data=df.to_csv().encode(), file_name="resultados.csv", key="descargar_resultados")
 
 # -------- FORMULARIO DE INICIO DE SESIÓN --------
 if st.session_state.usuario is None:
