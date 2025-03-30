@@ -21,7 +21,6 @@ qr.save(qr_bytes, format="PNG")
 st.image(qr_bytes, caption="Escanea el QR para acceder al experimento", use_container_width=True)
 
 
-
 # -------- INSTRUCCIONES --------
 st.title("🧪 Experimento")
 
@@ -69,15 +68,18 @@ diccionario = {
     "Que no requiere mucho esfuerzo para entenderse": {"respuesta": "fácil", "antonimo": "difícil"}
 }
 
-# -------- VARIABLES DE SESIÓN --------
+# -------- INICIALIZAR VARIABLES DE SESIÓN --------
+if "usuario" not in st.session_state:
+    st.session_state.usuario = None
+
 if "ensayo" not in st.session_state:
     st.session_state.ensayo = 1
     st.session_state.resultados = []
     st.session_state.condicion_actual = "Definición → Significado"
     st.session_state.transicion = False
     st.session_state.experimento_iniciado = False
-    st.session_state.usadas_significado = set()  # Inicializa el conjunto para las palabras usadas
-    st.session_state.usadas_antonimo = set()  # Inicializa el conjunto para las palabras usadas en la segunda parte
+    st.session_state.usadas_significado = set()
+    st.session_state.usadas_antonimo = set()
 
 #--------- Conectar con la base de datos SQLite-------
 conn = sqlite3.connect('experimento.db')
@@ -91,7 +93,15 @@ c.execute('''CREATE TABLE IF NOT EXISTS resultados (
                 respuesta_usuario TEXT, 
                 respuesta_correcta TEXT, 
                 correcto BOOLEAN, 
-                tiempo_reaccion REAL)''')
+                tiempo_reaccion REAL,
+                condicion TEXT)''')  # Se agregó la columna "condicion"
+
+# Verificar si la columna "condicion" existe, si no, agregarla
+try:
+    c.execute("ALTER TABLE resultados ADD COLUMN condicion TEXT")
+    conn.commit()
+except sqlite3.OperationalError:
+    pass  # La columna ya existe
 
 def guardar_resultado(usuario_id, ensayo, definicion, respuesta, correcta, tiempo):
     conn = sqlite3.connect('experimento.db')
@@ -105,6 +115,30 @@ def guardar_resultado(usuario_id, ensayo, definicion, respuesta, correcta, tiemp
 
 # Generar un ID único para cada usuario
 usuario_id = str(int(time.time()))  # Usar el tiempo como identificador único
+
+# -------- INTERFAZ Y LÓGICA DEL EXPERIMENTO --------
+if st.session_state.usuario == "admin":
+    st.header("Resultados del Experimento")
+    df = pd.read_sql_query("SELECT * FROM resultados", conn)
+    st.write("**Resultados de todos los usuarios**:")
+    st.write(df)
+    st.download_button("📥 Descargar Resultados", data=df.to_csv().encode(), file_name="resultados.csv")
+else:
+    st.write("¡El experimento ha comenzado! El administrador verá los resultados.")
+
+# -------- FORMULARIO DE INICIO DE SESIÓN --------
+if st.session_state.usuario is None:
+    usuario = st.text_input("Usuario")
+    contraseña = st.text_input("Contraseña", type="password")
+    if st.button("Iniciar sesión"):
+        if usuario == "admin" and contraseña == MASTER_PASSWORD:
+            st.session_state.usuario = "admin"
+            st.success("¡Has iniciado sesión como administrador!")
+            st.rerun()
+        else:
+            st.error("Credenciales incorrectas")
+else:
+    st.write(f"¡Bienvenido {st.session_state.usuario}!")
 
 # -------- BOTÓN DE INICIO --------
 if not st.session_state.experimento_iniciado:
@@ -214,21 +248,6 @@ if st.session_state.usuario == "admin":  # Verifica si es el administrador
 else:
     st.write("¡El experimento ha comenzado! El administrador verá los resultados.")
 
-# Formulario de inicio de sesión
-if "usuario" not in st.session_state:
-    st.session_state.usuario = None
 
-if st.session_state.usuario is None:
-    usuario = st.text_input("admin")
-    contraseña = st.text_input("experimento123", type="password")
-
-    if st.button("Iniciar sesión"):
-        if usuario == "admin" and contraseña == "admin123":  # Puedes cambiar las credenciales por otras
-            st.session_state.usuario = "admin"
-            st.success("¡Has iniciado sesión como administrador!")
-        else:
-            st.error("Credenciales incorrectas")
-else:
-    st.write(f"¡Bienvenido {st.session_state.usuario}!")
 
 
