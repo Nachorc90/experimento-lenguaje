@@ -204,7 +204,7 @@ if st.session_state.ensayo <= 20:
         key=f"respuesta_{st.session_state.ensayo}"
     )
 
-   if respuesta:
+  if respuesta:
     t_fin = time.time()
     tiempo = t_fin - st.session_state.t_inicio
     correcta = respuesta.lower() == st.session_state.correcta.lower()
@@ -214,11 +214,11 @@ if st.session_state.ensayo <= 20:
         st.success("✅ ¡Correcto!")
     else:
         st.error(f"❌ Incorrecto. La respuesta era: {st.session_state.correcta}")
+    
+    # Guardar el resultado del ensayo en la base de datos
+    guardar_resultado(usuario_id, st.session_state.ensayo, st.session_state.definicion, respuesta, st.session_state.correcta, correcta, tiempo)
 
-    # Guardar el resultado en la base de datos
-    guardar_resultado(usuario_id, st.session_state.ensayo, st.session_state.definicion, respuesta, st.session_state.correcta, tiempo)
-
-    # Mostrar botón "Siguiente" SIEMPRE tras responder
+    # Botón siguiente
     if st.button("➡️ Siguiente"):
         st.session_state.ensayo += 1
         st.session_state.pop("definicion")
