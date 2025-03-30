@@ -52,7 +52,18 @@ diccionario = {
     "Lleno de energía y dinamismo": {"respuesta": "activo", "antonimo": "pasivo"},
     "De textura suave y fácil de comprimir": {"respuesta": "blando", "antonimo": "duro"},
     "Que se puede comprender sin dificultad": {"respuesta": "simple", "antonimo": "complejo"},
+    "Falta de luz o de claridad": {"respuesta": "oscuro", "antonimo": "claro"},
+    "Que no tiene mucha altura": {"respuesta": "bajo", "antonimo": "alto"},
+    "Que tiene una gran capacidad para aprender o entender": {"respuesta": "inteligente", "antonimo": "tonto"},
+    "Que tiene un color rojo o parecido": {"respuesta": "rojo", "antonimo": "verde"},
+    "Que tiene un fuerte deseo o impulso de hacer algo": {"respuesta": "ambicioso", "antonimo": "apático"},
+    "Que se refiere a algo que ha sido creado o producido por un ser humano": {"respuesta": "artificial", "antonimo": "natural"},
+    "Que pertenece a otro lugar o tiempo": {"respuesta": "extranjero", "antonimo": "local"},
+    "Que tiene una gran capacidad para hacer cosas": {"respuesta": "hábil", "antonimo": "torpe"},
+    "Que provoca alegría o placer": {"respuesta": "divertido", "antonimo": "aburrido"},
+    "Que se caracteriza por tener una forma redonda": {"respuesta": "redondo", "antonimo": "cuadrado"},
 }
+
 
 # -------- INICIALIZAR VARIABLES DE SESIÓN --------
 if "usuario" not in st.session_state:
