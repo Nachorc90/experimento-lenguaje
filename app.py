@@ -118,12 +118,30 @@ if not st.session_state.experimento_iniciado:
 # -------- EXPERIMENTO --------
 if st.session_state.ensayo <= 20:
     if "definicion" not in st.session_state:
-        definicion = random.choice([k for k in diccionario.keys() if k not in st.session_state.usadas_significado])
-        st.session_state.usadas_significado.add(definicion)
+        # Determinar el conjunto de palabras usadas según la condición actual
+        if st.session_state.condicion_actual == "Definición → Significado":
+            usadas = st.session_state.usadas_significado
+        else:
+            usadas = st.session_state.usadas_antonimo
+
+        # Filtrar las definiciones disponibles
+        definiciones_disponibles = [k for k in diccionario.keys() if k not in usadas]
+
+        # Verificar si hay definiciones disponibles
+        if not definiciones_disponibles:
+            st.warning("No quedan más definiciones disponibles.")
+            st.stop()
+
+        # Seleccionar una definición al azar
+        definicion = random.choice(definiciones_disponibles)
+        usadas.add(definicion)
+
         opciones = diccionario[definicion]
-        correcta = opciones["respuesta"]
-        lista_opciones = [correcta, opciones["antonimo"]]
+        correcta = opciones["respuesta"] if st.session_state.condicion_actual == "Definición → Significado" else opciones["antonimo"]
+
+        lista_opciones = [correcta, opciones["antonimo"] if correcta == opciones["respuesta"] else opciones["respuesta"]]
         random.shuffle(lista_opciones)
+
         st.session_state.definicion = definicion
         st.session_state.correcta = correcta
         st.session_state.lista_opciones = lista_opciones
@@ -133,7 +151,6 @@ if st.session_state.ensayo <= 20:
     st.write(f"**Definición:** {st.session_state.definicion}")
 
     respuesta = st.radio("Selecciona la opción correcta:", st.session_state.lista_opciones)
-
     if respuesta:
         t_fin = time.time()
         tiempo = t_fin - st.session_state.t_inicio
