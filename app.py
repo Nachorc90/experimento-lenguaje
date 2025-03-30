@@ -130,7 +130,7 @@ if not st.session_state.experimento_iniciado:
 if st.session_state.ensayo <= 20:
     if st.session_state.ensayo == 11 and not st.session_state.transicion:
         # Mostrar mensaje de cambio de condición
-        st.warning("¡Has completado la primera parte del experimento! Ahora pasaremos a la segunda fase: **Definición → Antónimo**.")
+        st.warning("¡Has completado la primera parte del experimento! Ahora pasaremos a la segunda fase: **Definición → Antónimo**, en la que se te dará una definición y tendrá que contestar con su antónimo.")
         
         # Botón para continuar con la segunda fase
         if st.button("Continuar con la segunda fase"):
