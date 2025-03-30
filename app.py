@@ -15,8 +15,14 @@ experimento_iniciado = False
 st.sidebar.title("Modo Administrador")
 password = st.sidebar.text_input("Ingrese la clave de administrador:", type="password")
 is_master = password == MASTER_PASSWORD
-es_master = st.sidebar.checkbox("Soy el Master")
 
+if is_master:
+    st.sidebar.success("Eres el administrador")
+    st.sidebar.write(f"Usuarios preparados: {len(usuarios_preparados)}")
+    
+    if st.sidebar.button("Iniciar experimento"):
+        experimento_iniciado = True
+        st.session_state.experimento_iniciado = True
 # -------- QR SOLO EN PANTALLA DE INICIO --------
 app_url = "https://experimento-lenguaje-evvnuoczsrg43edwgztyrv.streamlit.app/"
 qr = qrcode.make(app_url)
@@ -44,15 +50,6 @@ if not st.session_state.listo:
     if st.button("Estoy listo"):
         usuarios_preparados.add(st.session_state.usuario)
         st.session_state.listo = True
-
-# -------- ADMINISTRADOR --------
-if es_master:
-    st.sidebar.success("Eres el administrador")
-    st.sidebar.write(f"Usuarios preparados: {len(usuarios_preparados)}")
-    
-    if st.sidebar.button("Iniciar experimento"):
-        experimento_iniciado = True
-        st.session_state.experimento_iniciado = True
 
 # -------- ESPERA HASTA QUE EL MASTER INICIE --------
 if not experimento_iniciado:
