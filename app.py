@@ -17,11 +17,22 @@ password = st.sidebar.text_input("Ingrese la clave de administrador:", type="pas
 is_master = password == MASTER_PASSWORD
 es_master = st.sidebar.checkbox("Soy el Master")
 
+# -------- QR SOLO EN PANTALLA DE INICIO --------
+app_url = "https://experimento-lenguaje-evvnuoczsrg43edwgztyrv.streamlit.app/"
+qr = qrcode.make(app_url)
+qr_bytes = BytesIO()
+qr.save(qr_bytes, format="PNG")
+st.image(qr_bytes, caption="Escanea el QR para acceder al experimento", use_container_width=True)
+
+
 # -------- INICIO DE SESIÓN --------
+if "usuario" not in st.session_state:
+    st.session_state.usuario = None  # Inicializa la clave si no existe
+
 nombre_usuario = st.text_input("Ingrese su nombre:", key="usuario")
 if nombre_usuario:
-    usuarios_conectados.add(nombre_usuario)
     st.session_state.usuario = nombre_usuario
+    usuarios_conectados.add(nombre_usuario)
 
 # -------- ADMINISTRADOR --------
 if es_master:
@@ -82,12 +93,6 @@ diccionario = {
     "Que no requiere mucho esfuerzo para entenderse": {"respuesta": "fácil", "antonimo": "difícil"}
 }
 
-# -------- QR SOLO EN PANTALLA DE INICIO --------
-app_url = "https://experimento-lenguaje-evvnuoczsrg43edwgztyrv.streamlit.app/"
-qr = qrcode.make(app_url)
-qr_bytes = BytesIO()
-qr.save(qr_bytes, format="PNG")
-st.image(qr_bytes, caption="Escanea el QR para acceder al experimento", use_container_width=True)
 
 # -------- VARIABLES DE SESIÓN --------
 if "ensayo" not in st.session_state:
