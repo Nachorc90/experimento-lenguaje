@@ -193,53 +193,61 @@ if st.session_state.ensayo <= 20:
     # Mostrar opciones y capturar respuesta
     respuesta = st.radio("Selecciona la opción correcta:", st.session_state.lista_opciones, index=None)
 
-    if respuesta:
-        # Calcular el tiempo de respuesta
-        t_fin = time.time()
-        tiempo = t_fin - st.session_state.t_inicio
+   if "t_reaccion" not in st.session_state:  
+    st.session_state.t_reaccion = time.time() - st.session_state.t_inicio  # Solo se calcula una vez
 
-        # Determinar si la respuesta es correcta o incorrecta
-        es_correcta = respuesta.lower() == st.session_state.correcta.lower()
+if respuesta:
+    es_correcta = respuesta.strip().lower() == st.session_state.correcta.strip().lower()
 
-        # Mostrar el resultado de la respuesta
-        if es_correcta:
-            st.success("¡Respuesta correcta! ✅")
-        else:
-            st.error(f"Respuesta incorrecta. La respuesta correcta era: {st.session_state.correcta} ❌")
+    if es_correcta:
+        st.success("¡Respuesta correcta! ✅")
+    else:
+        st.error(f"Respuesta incorrecta. La respuesta correcta era: {st.session_state.correcta} ❌")
 
-        # Mostrar el tiempo de respuesta
-        st.write(f"Tiempo de respuesta: {tiempo:.2f} segundos")
+    st.write(f"Tiempo de respuesta: {st.session_state.t_reaccion:.2f} segundos")
 
-        # Guardar resultado
-        guardar_resultado(
-            st.session_state.usuario_id,
-            st.session_state.ensayo,
-            st.session_state.definicion,
-            respuesta,
-            st.session_state.correcta,
-            tiempo
-        )
+    # Guardar resultado
+    guardar_resultado(
+        st.session_state.usuario_id,
+        st.session_state.ensayo,
+        st.session_state.definicion,
+        respuesta,
+        st.session_state.correcta,
+        st.session_state.t_reaccion  # Guardamos el tiempo correcto
+    )
 
-        # Mostrar botón de continuar
-        if st.button("Continuar"):
-            st.session_state.ensayo += 1
-            st.session_state.pop("definicion")  # Eliminar la definición actual
-            st.rerun()  # Recargar la app para avanzar al siguiente ensayo
+    # Botón para continuar
+    if st.button("Continuar"):
+        st.session_state.ensayo += 1
+        st.session_state.pop("definicion", None)  
+        st.session_state.pop("t_reaccion", None)  # Reiniciar el tiempo de reacción
+        st.rerun()
 
 else:
     st.success("🎉 ¡Has completado los 20 ensayos!")
 
- # -------- DESCARGAR RESULTADOS --------
-    def descargar_resultados():
+# -------- DESCARGAR RESULTADOS --------
+def descargar_resultados():
+    try:
         conn = sqlite3.connect('experimento.db')
-        df = pd.read_sql_query("SELECT * FROM resultados", conn)
+        df = pd.read_sql_query("SELECT * FROM resultados WHERE usuario_id = ?", conn, params=(st.session_state.usuario_id,))
         conn.close()
         return df
-    
-    if st.button("📥 Descargar Resultados"):
-        df = descargar_resultados()
-        csv = df.to_csv(index=False).encode("utf-8")
-        st.download_button("Descargar CSV", data=csv, file_name="resultados_experimento.csv", mime="text/csv")
+    except Exception as e:
+        st.error(f"Error al obtener los resultados: {e}")
+        return None
+
+if st.session_state.ensayo > 20:  # Solo mostrar si se han completado los 20 ensayos
+    st.write("🎉 **¡Has completado los 20 ensayos!**")
+    st.write("📊 **Descarga tus resultados**")
+
+    df = descargar_resultados()
+
+    if df is not None and not df.empty:
+        csv = df.to_csv(index=False, encoding="utf-8-sig").encode("utf-8-sig")
+        st.download_button("📥 Descargar CSV", data=csv, file_name="resultados_experimento.csv", mime="text/csv")
+    else:
+        st.warning("⚠️ No hay datos disponibles para descargar.")
 
 
 
