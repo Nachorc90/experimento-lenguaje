@@ -45,6 +45,12 @@ st.markdown("""
 
 # -------- DICCIONARIO DE PALABRAS --------
 diccionario = {
+    # Nueva condición "Prueba"
+    "Proceso de adquirir conocimientos": {"respuesta": "aprender", "antonimo": "ignorar"},
+    "Capacidad de actuar con rapidez y precisión": {"respuesta": "ágil", "antonimo": "torpe"},
+    "Que causa asombro o admiración": {"respuesta": "sorprendente", "antonimo": "ordinario"},
+
+    # Condición "Definición → Significado"
     "Estado de ánimo positivo y de alegría": {"respuesta": "feliz", "antonimo": "triste"},
     "Movimiento a gran velocidad": {"respuesta": "rápido", "antonimo": "lento"},
     "De dimensiones superiores a lo común": {"respuesta": "grande", "antonimo": "pequeño"},
@@ -55,6 +61,8 @@ diccionario = {
     "Lleno de energía y dinamismo": {"respuesta": "activo", "antonimo": "pasivo"},
     "De textura suave y fácil de comprimir": {"respuesta": "blando", "antonimo": "duro"},
     "Que se puede comprender sin dificultad": {"respuesta": "simple", "antonimo": "complejo"},
+
+    # Condición "Definición → Antónimo"
     "Falta de luz o de claridad": {"respuesta": "oscuro", "antonimo": "claro"},
     "Que no tiene mucha altura": {"respuesta": "bajo", "antonimo": "alto"},
     "Que tiene una gran capacidad para aprender o entender": {"respuesta": "inteligente", "antonimo": "tonto"},
@@ -66,7 +74,6 @@ diccionario = {
     "Que provoca alegría o placer": {"respuesta": "divertido", "antonimo": "aburrido"},
     "Que se caracteriza por tener una forma redonda": {"respuesta": "redondo", "antonimo": "cuadrado"},
 }
-
 # -------- INICIALIZAR VARIABLES DE SESIÓN --------
 if "usuario" not in st.session_state:
     st.session_state.usuario = None
@@ -76,9 +83,10 @@ if "usuario_id" not in st.session_state:
 if "ensayo" not in st.session_state:
     st.session_state.ensayo = 1
     st.session_state.resultados = []
-    st.session_state.condicion_actual = "Definición → Significado"
+    st.session_state.condicion_actual =  "Prueba"
     st.session_state.transicion = False
     st.session_state.experimento_iniciado = False
+    st.session_state.usadas_prueba = set()
     st.session_state.usadas_significado = set()
     st.session_state.usadas_antonimo = set()
 
@@ -139,25 +147,34 @@ if not st.session_state.experimento_iniciado:
         st.stop()
 
 # -------- EXPERIMENTO --------
-if st.session_state.ensayo <= 20:
-    if st.session_state.ensayo == 11 and not st.session_state.transicion:
-        st.warning("¡Has completado la primera parte del experimento! Ahora pasaremos a la segunda fase: **Definición → Antónimo**.")
+if st.session_state.ensayo <= 23:
+    if st.session_state.ensayo == 4 and not st.session_state.transicion:
+        st.warning("¡Has completado la fase de Prueba! Ahora pasaremos a la siguiente fase: **Definición → Significado**.")
         if st.button("Continuar con la segunda fase"):
             st.session_state.transicion = True  
             st.session_state.usadas_significado = set()  
             st.session_state.usadas_antonimo = set()
-            st.session_state.condicion_actual = "Definición → Antónimo"
+            st.session_state.condicion_actual = "Definición → Significado"
             st.rerun()  
         else:
             st.stop()
-
-    # Generar nueva pregunta si es necesario
+    if st.session_state.ensayo == 14 and not st.session_state.transicion:
+        st.warning("¡Has completado la fase de Definición → Significado! Ahora pasaremos a la fase final: **Definición → Antónimo**.")
+        if st.button("Continuar con la siguiente fase"):
+            st.session_state.transicion = True
+            st.session_state.condicion_actual = "Definición → Antónimo"
+            st.session_state.transicion = False
+            st.rerun()
+        else:
+            st.stop()
+            
+     # Generar nueva pregunta si es necesario
     if "definicion" not in st.session_state:
-        usadas = (
-            st.session_state.usadas_significado
-            if st.session_state.condicion_actual == "Definición → Significado"
-            else st.session_state.usadas_antonimo
-        )
+        usadas = {
+            "Prueba": st.session_state.usadas_prueba,
+            "Definición → Significado": st.session_state.usadas_significado,
+            "Definición → Antónimo": st.session_state.usadas_antonimo,
+        }[st.session_state.condicion_actual]
 
         definiciones_disponibles = [k for k in diccionario.keys() if k not in usadas]
 
@@ -169,7 +186,7 @@ if st.session_state.ensayo <= 20:
         usadas.add(definicion)
 
         opciones = diccionario[definicion]
-        correcta = opciones["respuesta"] if st.session_state.condicion_actual == "Definición → Significado" else opciones["antonimo"]
+        correcta = opciones["respuesta"] if st.session_state.condicion_actual != "Definición → Antónimo" else opciones["antonimo"]
 
         respuestas_posibles = [correcta]
         otras_palabras = [v["respuesta"] for v in diccionario.values() if v["respuesta"] not in respuestas_posibles]
@@ -185,8 +202,8 @@ if st.session_state.ensayo <= 20:
         st.session_state.t_inicio = time.time()  # Iniciar tiempo de reacción
         st.session_state.t_reaccion = None  # Reiniciar el tiempo de reacción
 
-    # Mostrar ensayo
-    st.write(f"**Ensayo {st.session_state.ensayo}/20**")
+   # Mostrar ensayo
+    st.write(f"**Ensayo {st.session_state.ensayo}/23 - {st.session_state.condicion_actual}**")
     st.write(f"**Definición:** {st.session_state.definicion}")
 
     # Mostrar opciones y capturar respuesta
@@ -227,7 +244,7 @@ if st.session_state.ensayo <= 20:
             st.rerun()
 
 # -------- FINALIZACIÓN DEL EXPERIMENTO --------
-if st.session_state.ensayo > 20:
+if st.session_state.ensayo > 23:
     st.success("🎉 **¡Has completado los 20 ensayos!**")
     st.write("📊 **Descarga tus resultados**")
 
