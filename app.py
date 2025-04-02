@@ -6,6 +6,8 @@ import pandas as pd
 import qrcode
 import uuid
 from io import BytesIO
+from openpyxl import Workbook
+from io import BytesIO
 
 # -------- CONFIGURACIONES --------
 MASTER_PASSWORD = "experimento123"
