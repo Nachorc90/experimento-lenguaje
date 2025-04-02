@@ -136,18 +136,15 @@ if not st.session_state.experimento_iniciado:
 # -------- EXPERIMENTO --------
 if st.session_state.ensayo <= 20:
     if st.session_state.ensayo == 11 and not st.session_state.transicion:
-        # Mostrar mensaje de cambio de condición
-        st.warning("¡Has completado la primera parte del experimento! Ahora pasaremos a la segunda fase: **Definición → Antónimo**, en la que se te dará una definición y tendrás que contestar con su antónimo.")
-        
-        # Botón para continuar con la segunda fase
+        st.warning("¡Has completado la primera parte del experimento! Ahora pasaremos a la segunda fase: **Definición → Antónimo**.")
         if st.button("Continuar con la segunda fase"):
-            st.session_state.transicion = True  # Marcar que ya se mostró la transición
-            st.session_state.usadas_significado = set()  # Reiniciar palabras usadas
+            st.session_state.transicion = True  
+            st.session_state.usadas_significado = set()  
             st.session_state.usadas_antonimo = set()
             st.session_state.condicion_actual = "Definición → Antónimo"
-            st.rerun()  # Recargar la app para continuar
+            st.rerun()  
         else:
-            st.stop()  # Detener ejecución hasta que el usuario haga clic
+            st.stop()
 
     # Generar nueva pregunta si es necesario
     if "definicion" not in st.session_state:
@@ -176,10 +173,12 @@ if st.session_state.ensayo <= 20:
         lista_opciones = [correcta] + distractores
         random.shuffle(lista_opciones)
 
+        # Guardar en la sesión
         st.session_state.definicion = definicion
         st.session_state.correcta = correcta
         st.session_state.lista_opciones = lista_opciones
         st.session_state.t_inicio = time.time()  # Iniciar tiempo de reacción
+        st.session_state.t_reaccion = None  # Reiniciar el tiempo de reacción
 
     # Mostrar ensayo
     st.write(f"**Ensayo {st.session_state.ensayo}/20**")
@@ -188,32 +187,38 @@ if st.session_state.ensayo <= 20:
     # Mostrar opciones y capturar respuesta
     respuesta = st.radio("Selecciona la opción correcta:", st.session_state.lista_opciones, index=None)
 
-    if respuesta:
-        t_reaccion = time.time() - st.session_state.t_inicio  # Calcular tiempo de reacción
-        es_correcta = respuesta.strip().lower() == st.session_state.correcta.strip().lower()
+    # Si el usuario responde y aún no se ha calculado el tiempo de reacción
+    if respuesta and st.session_state.t_reaccion is None:
+        st.session_state.t_reaccion = time.time() - st.session_state.t_inicio  # Guardar el tiempo de reacción
+        st.session_state.respuesta_usuario = respuesta  # Guardar la respuesta seleccionada
+        st.rerun()  # Forzar la actualización para mostrar el resultado sin que el tiempo siga contando
+
+    # Mostrar resultado si ya hay una respuesta guardada
+    if st.session_state.t_reaccion is not None:
+        es_correcta = st.session_state.respuesta_usuario.strip().lower() == st.session_state.correcta.strip().lower()
 
         if es_correcta:
             st.success("¡Respuesta correcta! ✅")
         else:
             st.error(f"Respuesta incorrecta. La respuesta correcta era: {st.session_state.correcta} ❌")
 
-        st.write(f"Tiempo de respuesta: {t_reaccion:.2f} segundos")
+        st.write(f"Tiempo de respuesta: {st.session_state.t_reaccion:.2f} segundos")
 
-        # Guardar resultado en la base de datos
+        # Guardar resultado
         guardar_resultado(
             st.session_state.usuario_id,
             st.session_state.ensayo,
             st.session_state.definicion,
-            respuesta,
+            st.session_state.respuesta_usuario,
             st.session_state.correcta,
-            t_reaccion
+            st.session_state.t_reaccion
         )
 
         # Botón para continuar
         if st.button("Continuar"):
             st.session_state.ensayo += 1
-            st.session_state.pop("definicion", None)
-            st.session_state.pop("lista_opciones", None)
+            for key in ["definicion", "lista_opciones", "respuesta_usuario", "t_reaccion"]:
+                st.session_state.pop(key, None)  # Limpiar variables relevantes
             st.rerun()
 
 # -------- FINALIZACIÓN DEL EXPERIMENTO --------
@@ -238,10 +243,3 @@ if st.session_state.ensayo > 20:
         st.download_button("📥 Descargar CSV", data=csv, file_name="resultados_experimento.csv", mime="text/csv")
     else:
         st.warning("⚠️ No hay datos disponibles para descargar.")
-
-
-
-
-
-
-
