@@ -66,6 +66,8 @@ diccionario = {
 }
 
 # -------- INICIALIZAR VARIABLES DE SESIÓN --------
+if "usuario" not in st.session_state:
+    st.session_state.usuario = None
 if "usuario_id" not in st.session_state:
     st.session_state.usuario_id = str(uuid.uuid4())  # Genera un ID único por usuario
 
@@ -93,19 +95,21 @@ c.execute('''CREATE TABLE IF NOT EXISTS resultados (
 conn.commit()
 conn.close()
 
-# -------- FUNCIÓN PARA GUARDAR RESULTADOS --------
+# -------- Guardar resultado --------
 def guardar_resultado(usuario_id, ensayo, definicion, respuesta, correcta, tiempo):
     try:
-        conn = sqlite3.connect('experimento.db', timeout=10)
-        cursor = conn.cursor()
-        cursor.execute('''
-            INSERT INTO resultados (usuario_id, ensayo, definicion, respuesta_usuario, respuesta_correcta, correcto, tiempo_reaccion, condicion)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-        ''', (usuario_id, ensayo, definicion, respuesta, correcta, respuesta.lower() == correcta.lower(), tiempo, st.session_state.condicion_actual))
-        conn.commit()
-        conn.close()
-    except Exception as e:
-        st.error(f"Error al guardar el resultado: {e}")
+        with sqlite3.connect('experimento.db', timeout=10) as conn:
+            cursor = conn.cursor()
+            cursor.execute('''
+                INSERT INTO resultados (usuario_id, ensayo, definicion, respuesta_usuario, respuesta_correcta, correcto, tiempo_reaccion, condicion)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            ''', (usuario_id, ensayo, definicion, respuesta, correcta, 
+                  respuesta.strip().lower() == correcta.strip().lower(),  # Evitar errores con espacios extra
+                  tiempo, st.session_state.condicion_actual))
+            conn.commit()
+    except sqlite3.Error as e:
+        st.error(f"Error al guardar el resultado en la base de datos: {e}")
+
 
 # -------- FORMULARIO DE INICIO DE SESIÓN --------
 if st.session_state.usuario is None:
@@ -208,7 +212,7 @@ if st.session_state.ensayo <= 20:
 
         # Guardar resultado
         guardar_resultado(
-            st.session_state.usuario,
+            st.session_state.usuario_id,
             st.session_state.ensayo,
             st.session_state.definicion,
             respuesta,
