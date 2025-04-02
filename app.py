@@ -95,17 +95,16 @@ c.execute('''CREATE TABLE IF NOT EXISTS resultados (
 conn.commit()
 conn.close()
 
-# -------- Guardar resultado --------
-def guardar_resultado(usuario_id, ensayo, definicion, respuesta, correcta, tiempo):
+# -------- GUARDAR RESULTADO --------
+def guardar_resultado(usuario_id, ensayo, condicion, definicion, respuesta, correcta, tiempo):
+    acierto = 1 if respuesta.strip().lower() == correcta.strip().lower() else 0
     try:
-        with sqlite3.connect('experimento.db', timeout=10) as conn:
+        with sqlite3.connect('experimento.db') as conn:
             cursor = conn.cursor()
             cursor.execute('''
-                INSERT INTO resultados (usuario_id, ensayo, definicion, respuesta_usuario, respuesta_correcta, correcto, tiempo_reaccion, condicion)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-            ''', (usuario_id, ensayo, definicion, respuesta, correcta, 
-                  respuesta.strip().lower() == correcta.strip().lower(),  # Evitar errores con espacios extra
-                  tiempo, st.session_state.condicion_actual))
+                INSERT INTO resultados (usuario_id, ensayo, condicion, definicion, acierto, respuesta_usuario, tiempo_reaccion)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+            ''', (usuario_id, ensayo, condicion, definicion, acierto, respuesta, tiempo))
             conn.commit()
     except sqlite3.Error as e:
         st.error(f"Error al guardar el resultado en la base de datos: {e}")
