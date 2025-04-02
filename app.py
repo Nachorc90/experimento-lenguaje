@@ -193,7 +193,7 @@ if st.session_state.ensayo <= 20:
     # Mostrar opciones y capturar respuesta
     respuesta = st.radio("Selecciona la opción correcta:", st.session_state.lista_opciones, index=None)
 
-   if "t_reaccion" not in st.session_state:  
+if "t_reaccion" not in st.session_state:  
     st.session_state.t_reaccion = time.time() - st.session_state.t_inicio  # Solo se calcula una vez
 
 if respuesta:
