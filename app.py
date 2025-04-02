@@ -223,8 +223,10 @@ if respuesta:
         st.session_state.pop("t_reaccion", None)  # Reiniciar el tiempo de reacción
         st.rerun()
 
-else:
-    st.success("🎉 ¡Has completado los 20 ensayos!")
+if st.session_state.ensayo > 20:  # Solo mostrar si realmente se han completado todos los ensayos
+    st.success("🎉 **¡Has completado los 20 ensayos!**")
+    st.write("📊 **Descarga tus resultados**")
+
 
 # -------- DESCARGAR RESULTADOS --------
 def descargar_resultados():
