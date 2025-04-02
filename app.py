@@ -4,6 +4,7 @@ import time
 import sqlite3
 import pandas as pd
 import qrcode
+import uuid
 from io import BytesIO
 
 # -------- CONFIGURACIONES --------
@@ -64,10 +65,9 @@ diccionario = {
     "Que se caracteriza por tener una forma redonda": {"respuesta": "redondo", "antonimo": "cuadrado"},
 }
 
-
 # -------- INICIALIZAR VARIABLES DE SESIÓN --------
-if "usuario" not in st.session_state:
-    st.session_state.usuario = None
+if "usuario_id" not in st.session_state:
+    st.session_state.usuario_id = str(uuid.uuid4())  # Genera un ID único por usuario
 
 if "ensayo" not in st.session_state:
     st.session_state.ensayo = 1
@@ -95,14 +95,17 @@ conn.close()
 
 # -------- FUNCIÓN PARA GUARDAR RESULTADOS --------
 def guardar_resultado(usuario_id, ensayo, definicion, respuesta, correcta, tiempo):
-    conn = sqlite3.connect('experimento.db')
-    cursor = conn.cursor()
-    cursor.execute('''
-        INSERT INTO resultados (usuario_id, ensayo, definicion, respuesta_usuario, respuesta_correcta, correcto, tiempo_reaccion, condicion)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-    ''', (usuario_id, ensayo, definicion, respuesta, correcta, respuesta.lower() == correcta.lower(), tiempo, st.session_state.condicion_actual))
-    conn.commit()
-    conn.close()
+    try:
+        conn = sqlite3.connect('experimento.db', timeout=10)
+        cursor = conn.cursor()
+        cursor.execute('''
+            INSERT INTO resultados (usuario_id, ensayo, definicion, respuesta_usuario, respuesta_correcta, correcto, tiempo_reaccion, condicion)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        ''', (usuario_id, ensayo, definicion, respuesta, correcta, respuesta.lower() == correcta.lower(), tiempo, st.session_state.condicion_actual))
+        conn.commit()
+        conn.close()
+    except Exception as e:
+        st.error(f"Error al guardar el resultado: {e}")
 
 # -------- FORMULARIO DE INICIO DE SESIÓN --------
 if st.session_state.usuario is None:
@@ -221,6 +224,18 @@ if st.session_state.ensayo <= 20:
 
 else:
     st.success("🎉 ¡Has completado los 20 ensayos!")
+
+ # -------- DESCARGAR RESULTADOS --------
+    def descargar_resultados():
+        conn = sqlite3.connect('experimento.db')
+        df = pd.read_sql_query("SELECT * FROM resultados", conn)
+        conn.close()
+        return df
+    
+    if st.button("📥 Descargar Resultados"):
+        df = descargar_resultados()
+        csv = df.to_csv(index=False).encode("utf-8")
+        st.download_button("Descargar CSV", data=csv, file_name="resultados_experimento.csv", mime="text/csv")
 
 
 
