@@ -137,7 +137,7 @@ if not st.session_state.experimento_iniciado:
 if st.session_state.ensayo <= 20:
     if st.session_state.ensayo == 11 and not st.session_state.transicion:
         # Mostrar mensaje de cambio de condición
-        st.warning("¡Has completado la primera parte del experimento! Ahora pasaremos a la segunda fase: **Definición → Antónimo**, en la que se te dará una definición y tendrá que contestar con su antónimo.")
+        st.warning("¡Has completado la primera parte del experimento! Ahora pasaremos a la segunda fase: **Definición → Antónimo**, en la que se te dará una definición y tendrás que contestar con su antónimo.")
         
         # Botón para continuar con la segunda fase
         if st.button("Continuar con la segunda fase"):
@@ -149,42 +149,37 @@ if st.session_state.ensayo <= 20:
         else:
             st.stop()  # Detener ejecución hasta que el usuario haga clic
 
+    # Generar nueva pregunta si es necesario
     if "definicion" not in st.session_state:
-        # Determinar el conjunto de palabras usadas según la condición actual
-        usadas = st.session_state.usadas_significado if st.session_state.condicion_actual == "Definición → Significado" else st.session_state.usadas_antonimo
+        usadas = (
+            st.session_state.usadas_significado
+            if st.session_state.condicion_actual == "Definición → Significado"
+            else st.session_state.usadas_antonimo
+        )
 
-        # Filtrar las definiciones disponibles
         definiciones_disponibles = [k for k in diccionario.keys() if k not in usadas]
 
-        # Verificar si hay definiciones disponibles
         if not definiciones_disponibles:
             st.warning("No quedan más definiciones disponibles.")
             st.stop()
 
-        # Seleccionar una definición al azar
         definicion = random.choice(definiciones_disponibles)
         usadas.add(definicion)
 
-        # Obtener la respuesta correcta según la condición
         opciones = diccionario[definicion]
         correcta = opciones["respuesta"] if st.session_state.condicion_actual == "Definición → Significado" else opciones["antonimo"]
 
-        # Generar opciones de respuesta asegurando que sean únicas
-        respuestas_posibles = [opciones["respuesta"], opciones["antonimo"]]
-        otras_palabras = [v["respuesta"] for k, v in diccionario.items() if v["respuesta"] not in respuestas_posibles]
+        respuestas_posibles = [correcta]
+        otras_palabras = [v["respuesta"] for v in diccionario.values() if v["respuesta"] not in respuestas_posibles]
 
-        # Seleccionar dos opciones únicas que no sean la respuesta correcta
         distractores = random.sample([w for w in otras_palabras if w != correcta], 2)
-
-        # Crear lista de opciones y mezclar
         lista_opciones = [correcta] + distractores
         random.shuffle(lista_opciones)
 
-        # Guardar en la sesión
         st.session_state.definicion = definicion
         st.session_state.correcta = correcta
         st.session_state.lista_opciones = lista_opciones
-        st.session_state.t_inicio = time.time()
+        st.session_state.t_inicio = time.time()  # Iniciar tiempo de reacción
 
     # Mostrar ensayo
     st.write(f"**Ensayo {st.session_state.ensayo}/20**")
@@ -193,55 +188,48 @@ if st.session_state.ensayo <= 20:
     # Mostrar opciones y capturar respuesta
     respuesta = st.radio("Selecciona la opción correcta:", st.session_state.lista_opciones, index=None)
 
-if "t_reaccion" not in st.session_state:  
-    st.session_state.t_reaccion = time.time() - st.session_state.t_inicio  # Solo se calcula una vez
+    if respuesta:
+        t_reaccion = time.time() - st.session_state.t_inicio  # Calcular tiempo de reacción
+        es_correcta = respuesta.strip().lower() == st.session_state.correcta.strip().lower()
 
-if respuesta:
-    es_correcta = respuesta.strip().lower() == st.session_state.correcta.strip().lower()
+        if es_correcta:
+            st.success("¡Respuesta correcta! ✅")
+        else:
+            st.error(f"Respuesta incorrecta. La respuesta correcta era: {st.session_state.correcta} ❌")
 
-    if es_correcta:
-        st.success("¡Respuesta correcta! ✅")
-    else:
-        st.error(f"Respuesta incorrecta. La respuesta correcta era: {st.session_state.correcta} ❌")
+        st.write(f"Tiempo de respuesta: {t_reaccion:.2f} segundos")
 
-    st.write(f"Tiempo de respuesta: {st.session_state.t_reaccion:.2f} segundos")
+        # Guardar resultado en la base de datos
+        guardar_resultado(
+            st.session_state.usuario_id,
+            st.session_state.ensayo,
+            st.session_state.definicion,
+            respuesta,
+            st.session_state.correcta,
+            t_reaccion
+        )
 
-    # Guardar resultado
-    guardar_resultado(
-        st.session_state.usuario_id,
-        st.session_state.ensayo,
-        st.session_state.definicion,
-        respuesta,
-        st.session_state.correcta,
-        st.session_state.t_reaccion  # Guardamos el tiempo correcto
-    )
+        # Botón para continuar
+        if st.button("Continuar"):
+            st.session_state.ensayo += 1
+            st.session_state.pop("definicion", None)
+            st.session_state.pop("lista_opciones", None)
+            st.rerun()
 
-    # Botón para continuar
-    if st.button("Continuar"):
-        st.session_state.ensayo += 1
-        st.session_state.pop("definicion", None)  
-        st.session_state.pop("t_reaccion", None)  # Reiniciar el tiempo de reacción
-        st.rerun()
-
-if st.session_state.ensayo > 20:  # Solo mostrar si realmente se han completado todos los ensayos
+# -------- FINALIZACIÓN DEL EXPERIMENTO --------
+if st.session_state.ensayo > 20:
     st.success("🎉 **¡Has completado los 20 ensayos!**")
     st.write("📊 **Descarga tus resultados**")
 
-
-# -------- DESCARGAR RESULTADOS --------
-def descargar_resultados():
-    try:
-        conn = sqlite3.connect('experimento.db')
-        df = pd.read_sql_query("SELECT * FROM resultados WHERE usuario_id = ?", conn, params=(st.session_state.usuario_id,))
-        conn.close()
-        return df
-    except Exception as e:
-        st.error(f"Error al obtener los resultados: {e}")
-        return None
-
-if st.session_state.ensayo > 20:  # Solo mostrar si se han completado los 20 ensayos
-    st.write("🎉 **¡Has completado los 20 ensayos!**")
-    st.write("📊 **Descarga tus resultados**")
+    def descargar_resultados():
+        try:
+            conn = sqlite3.connect('experimento.db')
+            df = pd.read_sql_query("SELECT * FROM resultados WHERE usuario_id = ?", conn, params=(st.session_state.usuario_id,))
+            conn.close()
+            return df
+        except Exception as e:
+            st.error(f"Error al obtener los resultados: {e}")
+            return None
 
     df = descargar_resultados()
 
