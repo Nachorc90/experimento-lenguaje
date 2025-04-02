@@ -80,35 +80,39 @@ if "ensayo" not in st.session_state:
     st.session_state.usadas_significado = set()
     st.session_state.usadas_antonimo = set()
 
-# -------- CONECTAR A BASE DE DATOS --------
-conn = sqlite3.connect('experimento.db')
-c = conn.cursor()
-c.execute('''CREATE TABLE IF NOT EXISTS resultados (
-                usuario_id TEXT,
-                ensayo INTEGER,
-                definicion TEXT,
-                respuesta_usuario TEXT,
-                respuesta_correcta TEXT,
-                correcto BOOLEAN,
-                tiempo_reaccion REAL,
-                condicion TEXT)''')
-conn.commit()
-conn.close()
+# -------- CONFIGURACIÓN DE BASE DE DATOS --------
+def inicializar_db():
+    conn = sqlite3.connect('experimento.db')
+    c = conn.cursor()
+    c.execute('''CREATE TABLE IF NOT EXISTS resultados (
+                    usuario_id TEXT,
+                    usuario TEXT,
+                    ensayo INTEGER,
+                    condicion TEXT,
+                    definicion TEXT,
+                    respuesta_usuario TEXT,
+                    respuesta_correcta TEXT,
+                    correcto BOOLEAN,
+                    tiempo_reaccion REAL
+                )''')
+    conn.commit()
+    conn.close()
 
-# -------- GUARDAR RESULTADO--------
-def guardar_resultado(usuario_id, ensayo, definicion, respuesta, correcta, tiempo):
+inicializar_db()
+
+# -------- GUARDAR RESULTADO --------
+def guardar_resultado(usuario_id, usuario, ensayo, condicion, definicion, respuesta, correcta, tiempo):
     acierto = 1 if respuesta.strip().lower() == correcta.strip().lower() else 0
     try:
         with sqlite3.connect('experimento.db') as conn:
             cursor = conn.cursor()
             cursor.execute('''
-                INSERT INTO resultados (usuario_id, ensayo, definicion, respuesta_usuario, respuesta_correcta, correcto, tiempo_reaccion)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
-            ''', (usuario_id, ensayo, definicion, respuesta, correcta, acierto, tiempo))
+                INSERT INTO resultados (usuario_id, usuario, ensayo, condicion, definicion, respuesta_usuario, respuesta_correcta, correcto, tiempo_reaccion)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ''', (usuario_id, usuario, ensayo, condicion, definicion, respuesta, correcta, acierto, tiempo))
             conn.commit()
     except sqlite3.Error as e:
         st.error(f"Error al guardar el resultado en la base de datos: {e}")
-
 
 # -------- FORMULARIO DE INICIO DE SESIÓN --------
 if st.session_state.usuario is None:
@@ -225,20 +229,34 @@ if st.session_state.ensayo > 20:
     st.success("🎉 **¡Has completado los 20 ensayos!**")
     st.write("📊 **Descarga tus resultados**")
 
-    def descargar_resultados():
-        try:
-            conn = sqlite3.connect('experimento.db')
-            df = pd.read_sql_query("SELECT * FROM resultados WHERE usuario_id = ?", conn, params=(st.session_state.usuario_id,))
-            conn.close()
-            return df
-        except Exception as e:
-            st.error(f"Error al obtener los resultados: {e}")
+   # -------- DESCARGAR RESULTADOS EN EXCEL --------
+def descargar_resultados_excel():
+    try:
+        conn = sqlite3.connect('experimento.db')
+        df = pd.read_sql_query("SELECT * FROM resultados", conn)
+        conn.close()
+        
+        if df.empty:
+            st.warning("⚠️ No hay datos disponibles para descargar.")
             return None
+        
+        output = BytesIO()
+        with pd.ExcelWriter(output, engine='openpyxl') as writer:
+            df.to_excel(writer, index=False, sheet_name='Resultados')
+        output.seek(0)
+        return output
+    except Exception as e:
+        st.error(f"Error al generar el archivo Excel: {e}")
+        return None
 
-    df = descargar_resultados()
+    # -------- INTERFAZ DE DESCARGA --------
+st.title("📊 Resultados del Experimento")
+excel_data = descargar_resultados_excel()
+if excel_data:
+    st.download_button(
+        label="📥 Descargar Resultados en Excel",
+        data=excel_data,
+        file_name="resultados_experimento.xlsx",
+        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
 
-    if df is not None and not df.empty:
-        csv = df.to_csv(index=False, encoding="utf-8-sig").encode("utf-8-sig")
-        st.download_button("📥 Descargar CSV", data=csv, file_name="resultados_experimento.csv", mime="text/csv")
-    else:
-        st.warning("⚠️ No hay datos disponibles para descargar.")
