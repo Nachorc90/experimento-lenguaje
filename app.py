@@ -211,9 +211,9 @@ if st.session_state.ensayo == 14 and not st.session_state.transicion:
         es_correcta = st.session_state.respuesta_usuario.strip().lower() == st.session_state.correcta.strip().lower()
 
         if es_correcta:
-        st.success("¡Respuesta correcta! ✅")
-    else:
-        st.error(f"Respuesta incorrecta. La respuesta correcta era: {st.session_state.correcta} ❌")
+            st.success("¡Respuesta correcta! ✅")
+        else:
+            st.error(f"Respuesta incorrecta. La respuesta correcta era: {st.session_state.correcta} ❌")
 
     st.write(f"Tiempo de respuesta: {st.session_state.t_reaccion:.2f} segundos")
 
