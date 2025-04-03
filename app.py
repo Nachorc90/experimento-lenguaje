@@ -212,7 +212,7 @@ if st.session_state.ensayo == 14 and not st.session_state.transicion:
 
 
   # -------- GUARDADO EVITANDO DUPLICADOS --------
-if st.session_state.t_reaccion is not None and not st.session_state.get("resultado_guardado", False):
+if "t_reaccion" in st.session_state and st.session_state.t_reaccion is not None and not st.session_state.get("resultado_guardado", False):
     es_correcta = st.session_state.respuesta_usuario.strip().lower() == st.session_state.correcta.strip().lower()
 
     # Guardar resultado solo una vez
