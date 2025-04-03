@@ -150,11 +150,15 @@ if st.session_state.ensayo <= 23:
             
     if st.session_state.ensayo == 14 and not st.session_state.transicion:
         st.warning("¡Has completado la fase de Definición → Significado! Ahora pasaremos a la fase final: **Definición → Antónimo**.")
+
         if st.button("Continuar con la siguiente fase"):
+            st.session_state.transicion = True  # Marcamos que la transición está ocurriendo
             st.session_state.condicion_actual = "Definición → Antónimo"
-            st.session_state.transicion = True  # Marcar la transición como completada
-            st.session_state.usadas_antonimo = set()  # Reiniciar palabras usadas en la nueva fase
-            st.rerun()  # Forzar la recarga de la app
+            st.session_state.usadas_antonimo = set()  # Asegurar que el set de palabras se reinicia
+            st.session_state.ensayo += 1  # Avanzamos al siguiente ensayo
+            st.rerun()  # Forzar la actualización de la interfaz
+        else:
+            st.stop()
             
      # Generar nueva pregunta si es necesario
     if "definicion" not in st.session_state:
