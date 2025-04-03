@@ -235,7 +235,7 @@ if st.session_state.ensayo > 23:
     st.success("🎉 **¡Has completado los 20 ensayos!**")
     st.write("📊 **Descarga tus resultados**")
 
-  def descargar_resultados_excel():
+def descargar_resultados_excel():
     try:
         conn = sqlite3.connect('experimento.db')
         df = pd.read_sql_query("SELECT * FROM resultados", conn)
@@ -271,3 +271,4 @@ if excel_data:
         file_name="resultados_experimento.xlsx",
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
+
