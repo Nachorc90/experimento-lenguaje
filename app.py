@@ -147,15 +147,14 @@ if st.session_state.ensayo <= 23:
             st.rerun()  
         else:
             st.stop()
+            
     if st.session_state.ensayo == 14 and not st.session_state.transicion:
         st.warning("¡Has completado la fase de Definición → Significado! Ahora pasaremos a la fase final: **Definición → Antónimo**.")
         if st.button("Continuar con la siguiente fase"):
-            st.session_state.transicion = True
             st.session_state.condicion_actual = "Definición → Antónimo"
-            st.session_state.usadas_antonimo = set()  # Reiniciar palabras usadas
-            st.rerun()  # Volver a ejecutar la app
-        else:
-            st.stop()
+            st.session_state.transicion = True  # Marcar la transición como completada
+            st.session_state.usadas_antonimo = set()  # Reiniciar palabras usadas en la nueva fase
+            st.rerun()  # Forzar la recarga de la app
             
      # Generar nueva pregunta si es necesario
     if "definicion" not in st.session_state:
