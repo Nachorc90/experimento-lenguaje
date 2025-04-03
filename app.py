@@ -66,10 +66,6 @@ if "usuario" not in st.session_state:
     st.session_state.usuario = None
 if "usuario_id" not in st.session_state:
     st.session_state.usuario_id = str(uuid.uuid4())  # Genera un ID único por usuario
-if "t_reaccion" not in st.session_state:
-    st.session_state.t_reaccion = None
-if "experimento_iniciado" not in st.session_state:
-    st.session_state.experimento_iniciado = False  # Asegurar que existe y está en False
 
 if "ensayo" not in st.session_state:
     st.session_state.ensayo = 1
@@ -130,38 +126,34 @@ else:
     st.write(f"¡Bienvenido {st.session_state.usuario}!")
 
 # -------- BOTÓN DE INICIO DEL EXPERIMENTO --------
-if not st.session_state.get("experimento_iniciado", False):  # Verifica si no ha iniciado
+if not st.session_state.experimento_iniciado:
     if st.button("🚀 Comenzar Experimento"):
-        st.session_state.experimento_iniciado = True  # Actualiza la variable de sesión
-        st.rerun()  # Recarga la app para reflejar el cambio
-    else:
-        st.stop()  # Evita que el código siga ejecutándose
-        
-# -------- VARIABLES PARA EVITAR GUARDADOS DUPLICADOS --------
-if "resultado_guardado" not in st.session_state:
-    st.session_state.resultado_guardado = False  # Para controlar el guardado de datos
-    
-# -------- EXPERIMENTO --------
-# -------- TRANSICIÓN ENTRE CONDICIONES --------
-if st.session_state.ensayo == 4 and not st.session_state.transicion:
-    st.warning("¡Has completado la fase de Prueba! Ahora pasaremos a la siguiente fase: **Definición → Significado**.")
-    if st.button("Continuar con la segunda fase"):
-        st.session_state.transicion = True  
-        st.session_state.condicion_actual = "Definición → Significado"
-        st.session_state.usadas_significado = set()
-        st.rerun()  
-    else:
-        st.stop()
-
-if st.session_state.ensayo == 14 and not st.session_state.transicion:
-    st.warning("¡Has completado la fase de Definición → Significado! Ahora pasaremos a la fase final: **Definición → Antónimo**.")
-    if st.button("Continuar con la siguiente fase"):
-        st.session_state.transicion = True
-        st.session_state.condicion_actual = "Definición → Antónimo"
-        st.session_state.usadas_antonimo = set()
+        st.session_state.experimento_iniciado = True
         st.rerun()
     else:
         st.stop()
+
+# -------- EXPERIMENTO --------
+if st.session_state.ensayo <= 23:
+    if st.session_state.ensayo == 4 and not st.session_state.transicion:
+        st.warning("¡Has completado la fase de Prueba! Ahora pasaremos a la siguiente fase: **Definición → Significado**.")
+        if st.button("Continuar con la segunda fase"):
+            st.session_state.transicion = True  
+            st.session_state.usadas_significado = set()  
+            st.session_state.usadas_antonimo = set()
+            st.session_state.condicion_actual = "Definición → Significado"
+            st.rerun()  
+        else:
+            st.stop()
+    if st.session_state.ensayo == 14 and not st.session_state.transicion:
+        st.warning("¡Has completado la fase de Definición → Significado! Ahora pasaremos a la fase final: **Definición → Antónimo**.")
+        if st.button("Continuar con la siguiente fase"):
+            st.session_state.transicion = True
+            st.session_state.condicion_actual = "Definición → Antónimo"
+            st.session_state.transicion = False
+            st.rerun()
+        else:
+            st.stop()
             
      # Generar nueva pregunta si es necesario
     if "definicion" not in st.session_state:
@@ -219,45 +211,28 @@ if st.session_state.ensayo == 14 and not st.session_state.transicion:
         else:
             st.error(f"Respuesta incorrecta. La respuesta correcta era: {st.session_state.correcta} ❌")
 
-    st.write(f"Tiempo de respuesta: {st.session_state.t_reaccion:.2f} segundos")
+        st.write(f"Tiempo de respuesta: {st.session_state.t_reaccion:.2f} segundos")
 
-  # -------- GUARDADO EVITANDO DUPLICADOS --------
-if st.session_state.t_reaccion is not None and not st.session_state.get("resultado_guardado", False):
-    es_correcta = st.session_state.respuesta_usuario.strip().lower() == st.session_state.correcta.strip().lower()
+        # Guardar resultado
+        guardar_resultado(
+            st.session_state.usuario_id,
+            st.session_state.ensayo,
+            st.session_state.definicion,
+            st.session_state.respuesta_usuario,
+            st.session_state.correcta,
+            st.session_state.t_reaccion
+        )
 
-    # Guardar resultado solo una vez
-    guardar_resultado(
-        st.session_state.usuario_id,
-        st.session_state.usuario,
-        st.session_state.ensayo,
-        st.session_state.condicion_actual,
-        st.session_state.definicion,
-        st.session_state.respuesta_usuario,
-        st.session_state.correcta,
-        st.session_state.t_reaccion
-    )
-
-    st.session_state.resultado_guardado = True  # Marcar que ya se guardó
-
-    # Mostrar feedback al usuario
-    if es_correcta:
-        st.success("¡Respuesta correcta! ✅")
-    else:
-        st.error(f"Respuesta incorrecta. La respuesta correcta era: {st.session_state.correcta} ❌")
-
-    st.write(f"Tiempo de respuesta: {st.session_state.t_reaccion:.2f} segundos")
-
-    # Botón para continuar con el experimento
-    if st.button("Continuar"):
-        st.session_state.ensayo += 1
-        for key in ["definicion", "lista_opciones", "respuesta_usuario", "t_reaccion", "resultado_guardado"]:
-            st.session_state.pop(key, None)  # Limpiar variables relevantes
-        st.rerun()
-
+        # Botón para continuar
+        if st.button("Continuar"):
+            st.session_state.ensayo += 1
+            for key in ["definicion", "lista_opciones", "respuesta_usuario", "t_reaccion"]:
+                st.session_state.pop(key, None)  # Limpiar variables relevantes
+            st.rerun()
 
 # -------- FINALIZACIÓN DEL EXPERIMENTO --------
 if st.session_state.ensayo > 23:
-    st.success("🎉 **¡Has completado todos ensayos!**")
+    st.success("🎉 **¡Has completado los 20 ensayos!**")
     st.write("📊 **Descarga tus resultados**")
 
 def descargar_resultados_excel():
