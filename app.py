@@ -133,27 +133,31 @@ if not st.session_state.experimento_iniciado:
     else:
         st.stop()
 
+# -------- VARIABLES PARA EVITAR GUARDADOS DUPLICADOS --------
+if "resultado_guardado" not in st.session_state:
+    st.session_state.resultado_guardado = False  # Para controlar el guardado de datos
+    
 # -------- EXPERIMENTO --------
-if st.session_state.ensayo <= 23:
-    if st.session_state.ensayo == 4 and not st.session_state.transicion:
-        st.warning("¡Has completado la fase de Prueba! Ahora pasaremos a la siguiente fase: **Definición → Significado**.")
-        if st.button("Continuar con la segunda fase"):
-            st.session_state.transicion = True  
-            st.session_state.usadas_significado = set()  
-            st.session_state.usadas_antonimo = set()
-            st.session_state.condicion_actual = "Definición → Significado"
-            st.rerun()  
-        else:
-            st.stop()
-    if st.session_state.ensayo == 14 and not st.session_state.transicion:
-        st.warning("¡Has completado la fase de Definición → Significado! Ahora pasaremos a la fase final: **Definición → Antónimo**.")
-        if st.button("Continuar con la siguiente fase"):
-            st.session_state.transicion = True
-            st.session_state.condicion_actual = "Definición → Antónimo"
-            st.session_state.transicion = False
-            st.rerun()
-        else:
-            st.stop()
+# -------- TRANSICIÓN ENTRE CONDICIONES --------
+if st.session_state.ensayo == 4 and not st.session_state.transicion:
+    st.warning("¡Has completado la fase de Prueba! Ahora pasaremos a la siguiente fase: **Definición → Significado**.")
+    if st.button("Continuar con la segunda fase"):
+        st.session_state.transicion = True  
+        st.session_state.condicion_actual = "Definición → Significado"
+        st.session_state.usadas_significado = set()
+        st.rerun()  
+    else:
+        st.stop()
+
+if st.session_state.ensayo == 14 and not st.session_state.transicion:
+    st.warning("¡Has completado la fase de Definición → Significado! Ahora pasaremos a la fase final: **Definición → Antónimo**.")
+    if st.button("Continuar con la siguiente fase"):
+        st.session_state.transicion = True
+        st.session_state.condicion_actual = "Definición → Antónimo"
+        st.session_state.usadas_antonimo = set()
+        st.rerun()
+    else:
+        st.stop()
             
      # Generar nueva pregunta si es necesario
     if "definicion" not in st.session_state:
@@ -207,22 +211,28 @@ if st.session_state.ensayo <= 23:
         es_correcta = st.session_state.respuesta_usuario.strip().lower() == st.session_state.correcta.strip().lower()
 
         if es_correcta:
-            st.success("¡Respuesta correcta! ✅")
-        else:
-            st.error(f"Respuesta incorrecta. La respuesta correcta era: {st.session_state.correcta} ❌")
+        st.success("¡Respuesta correcta! ✅")
+    else:
+        st.error(f"Respuesta incorrecta. La respuesta correcta era: {st.session_state.correcta} ❌")
 
-        st.write(f"Tiempo de respuesta: {st.session_state.t_reaccion:.2f} segundos")
+    st.write(f"Tiempo de respuesta: {st.session_state.t_reaccion:.2f} segundos")
 
-        guardar_resultado(
-            st.session_state.usuario_id,
-            st.session_state.usuario,  # Agregar usuario
-            st.session_state.ensayo,
-            st.session_state.condicion_actual,  # Agregar condición
-            st.session_state.definicion,
-            st.session_state.respuesta_usuario,
-            st.session_state.correcta,
-            st.session_state.t_reaccion
-)
+       # -------- GUARDADO EVITANDO DUPLICADOS --------
+if st.session_state.t_reaccion is not None and not st.session_state.resultado_guardado:
+    es_correcta = st.session_state.respuesta_usuario.strip().lower() == st.session_state.correcta.strip().lower()
+
+    guardar_resultado(
+        st.session_state.usuario_id,
+        st.session_state.usuario,
+        st.session_state.ensayo,
+        st.session_state.condicion_actual,
+        st.session_state.definicion,
+        st.session_state.respuesta_usuario,
+        st.session_state.correcta,
+        st.session_state.t_reaccion
+    )
+
+    st.session_state.resultado_guardado = True  # Marcar que ya se guardó
 
         # Botón para continuar
         if st.button("Continuar"):
@@ -233,7 +243,7 @@ if st.session_state.ensayo <= 23:
 
 # -------- FINALIZACIÓN DEL EXPERIMENTO --------
 if st.session_state.ensayo > 23:
-    st.success("🎉 **¡Has completado los 20 ensayos!**")
+    st.success("🎉 **¡Has completado todos ensayos!**")
     st.write("📊 **Descarga tus resultados**")
 
 def descargar_resultados_excel():
