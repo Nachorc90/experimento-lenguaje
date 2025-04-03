@@ -128,13 +128,13 @@ else:
     st.write(f"¡Bienvenido {st.session_state.usuario}!")
 
 # -------- BOTÓN DE INICIO DEL EXPERIMENTO --------
-if not st.session_state.experimento_iniciado:
+if not st.session_state.get("experimento_iniciado", False):  # Verifica si no ha iniciado
     if st.button("🚀 Comenzar Experimento"):
-        st.session_state.experimento_iniciado = True
-        st.rerun()
+        st.session_state.experimento_iniciado = True  # Actualiza la variable de sesión
+        st.rerun()  # Recarga la app para reflejar el cambio
     else:
-        st.stop()
-
+        st.stop()  # Evita que el código siga ejecutándose
+        
 # -------- VARIABLES PARA EVITAR GUARDADOS DUPLICADOS --------
 if "resultado_guardado" not in st.session_state:
     st.session_state.resultado_guardado = False  # Para controlar el guardado de datos
