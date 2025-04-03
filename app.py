@@ -127,13 +127,14 @@ if st.session_state.usuario is None:
 else:
     st.write(f"¡Bienvenido {st.session_state.usuario}!")
 
-# -------- BOTÓN DE INICIO DEL EXPERIMENTO --------
+# -------- BOTON DE INCIO --------
 if not st.session_state.experimento_iniciado:
     if st.button("🚀 Comenzar Experimento"):
         st.session_state.experimento_iniciado = True
-        st.experimental_rerun()  # Usar esta función para actualizar correctamente
+        st.rerun()
     else:
-        st.stop()  # Asegura que no haga nada más si no se ha presionado el botón
+        st.stop()  # Detiene el flujo si no se ha iniciado el experimento
+
 
 # -------- VARIABLES PARA EVITAR GUARDADOS DUPLICADOS --------
 if "resultado_guardado" not in st.session_state:
