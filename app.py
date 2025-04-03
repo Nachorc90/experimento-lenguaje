@@ -216,13 +216,17 @@ if st.session_state.ensayo <= 23:
         # Guardar resultado
         guardar_resultado(
             st.session_state.usuario_id,
+            st.session_state.usuario,
             st.session_state.ensayo,
+            st.session_state.condicion,
             st.session_state.definicion,
             st.session_state.respuesta_usuario,
+            st.session_state.respuesta_correcta,
             st.session_state.correcta,
             st.session_state.t_reaccion
         )
 
+    
         # Botón para continuar
         if st.button("Continuar"):
             st.session_state.ensayo += 1
