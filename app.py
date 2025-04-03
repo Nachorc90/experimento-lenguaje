@@ -235,8 +235,7 @@ if st.session_state.ensayo > 23:
     st.success("🎉 **¡Has completado los 20 ensayos!**")
     st.write("📊 **Descarga tus resultados**")
 
-   # -------- DESCARGAR RESULTADOS EN EXCEL --------
-def descargar_resultados_excel():
+  def descargar_resultados_excel():
     try:
         conn = sqlite3.connect('experimento.db')
         df = pd.read_sql_query("SELECT * FROM resultados", conn)
@@ -245,6 +244,13 @@ def descargar_resultados_excel():
         if df.empty:
             st.warning("⚠️ No hay datos disponibles para descargar.")
             return None
+        
+        # Asegurar que las columnas están organizadas de manera correcta
+        columnas_ordenadas = [
+            "usuario_id", "usuario", "ensayo", "condicion", "definicion",
+            "respuesta_usuario", "respuesta_correcta", "correcto", "tiempo_reaccion"
+        ]
+        df = df[columnas_ordenadas]
         
         output = BytesIO()
         with pd.ExcelWriter(output, engine='openpyxl') as writer:
@@ -255,7 +261,7 @@ def descargar_resultados_excel():
         st.error(f"Error al generar el archivo Excel: {e}")
         return None
 
-    # -------- INTERFAZ DE DESCARGA --------
+# -------- INTERFAZ DE DESCARGA --------
 st.title("📊 Resultados del Experimento")
 excel_data = descargar_resultados_excel()
 if excel_data:
@@ -265,4 +271,3 @@ if excel_data:
         file_name="resultados_experimento.xlsx",
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
-
