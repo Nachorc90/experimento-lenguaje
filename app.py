@@ -152,8 +152,8 @@ if st.session_state.ensayo <= 23:
         if st.button("Continuar con la siguiente fase"):
             st.session_state.transicion = True
             st.session_state.condicion_actual = "Definición → Antónimo"
-            st.session_state.transicion = False
-            st.rerun()
+            st.session_state.usadas_antonimo = set()  # Reiniciar palabras usadas
+            st.rerun()  # Volver a ejecutar la app
         else:
             st.stop()
             
