@@ -223,7 +223,6 @@ if st.session_state.ensayo <= 23:
             st.session_state.condicion_actual,
             st.session_state.definicion,
             st.session_state.respuesta_usuario,
-            st.session_state.respuesta_correcta,
             st.session_state.correcta,
             st.session_state.t_reaccion
         )
