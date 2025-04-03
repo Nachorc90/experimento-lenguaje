@@ -27,20 +27,7 @@ st.title("🧪 Experimento")
 
 st.markdown("## Normas del Experimento")
 st.markdown("""
-1. **Instrucciones Iniciales**:
-    - El experimento se dividirá en 20 ensayos en total.
-    - Primero se realizarán **10 ensayos con la condición 'Definición → Significado'**.
-    - Luego, se realizarán **10 ensayos con la condición 'Definición → Antónimo'**.
-
-2. **Modo de Respuesta**:
-    - En cada ensayo, se te mostrará una definición y tendrás que seleccionar la opción correcta.
-    - Cada ensayo tendrá un límite de tiempo para responder, y tu tiempo de reacción será registrado.
-
-3. **Al Finalizar**:
-    - Una vez que completes los 20 ensayos, podrás ver tus resultados y descargarlos en formato CSV.
-
-4. **Para Comenzar**:
-    - Una vez que hayas leído estas instrucciones y estés listo para comenzar, haz clic en el botón **'Estoy listo'**.
+Completar.
 """)
 
 # -------- DICCIONARIO DE PALABRAS --------
