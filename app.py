@@ -127,13 +127,12 @@ if st.session_state.usuario is None:
 else:
     st.write(f"¡Bienvenido {st.session_state.usuario}!")
 
-# -------- BOTON DE INCIO --------
+# -------- BOTÓN PARA INICIAR EL EXPERIMENTO --------
 if not st.session_state.experimento_iniciado:
     if st.button("🚀 Comenzar Experimento"):
         st.session_state.experimento_iniciado = True
         st.rerun()
-    else:
-        st.stop()  # Detiene el flujo si no se ha iniciado el experimento
+st.write(f"Estado del experimento: {st.session_state.experimento_iniciado}")
 
 
 # -------- VARIABLES PARA EVITAR GUARDADOS DUPLICADOS --------
@@ -141,6 +140,10 @@ if "resultado_guardado" not in st.session_state:
     st.session_state.resultado_guardado = False  # Para controlar el guardado de datos
     
 # -------- EXPERIMENTO --------
+# -------- INICIO DEL EXPERIMENTO --------
+if st.session_state.experimento_iniciado:
+    st.write("¡El experimento ha comenzado!")
+    # Aquí irá el código para mostrar preguntas y opciones
 # -------- TRANSICIÓN ENTRE CONDICIONES --------
 if st.session_state.ensayo == 4 and not st.session_state.transicion:
     st.warning("¡Has completado la fase de Prueba! Ahora pasaremos a la siguiente fase: **Definición → Significado**.")
