@@ -68,6 +68,8 @@ if "usuario_id" not in st.session_state:
     st.session_state.usuario_id = str(uuid.uuid4())  # Genera un ID único por usuario
 if "t_reaccion" not in st.session_state:
     st.session_state.t_reaccion = None
+if "experimento_iniciado" not in st.session_state:
+    st.session_state.experimento_iniciado = False  # Asegurar que existe y está en False
 
 if "ensayo" not in st.session_state:
     st.session_state.ensayo = 1
