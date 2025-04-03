@@ -217,10 +217,11 @@ if st.session_state.ensayo == 14 and not st.session_state.transicion:
 
     st.write(f"Tiempo de respuesta: {st.session_state.t_reaccion:.2f} segundos")
 
-     # -------- GUARDADO EVITANDO DUPLICADOS --------
-if st.session_state.t_reaccion is not None and not st.session_state.resultado_guardado:
+  # -------- GUARDADO EVITANDO DUPLICADOS --------
+if st.session_state.t_reaccion is not None and not st.session_state.get("resultado_guardado", False):
     es_correcta = st.session_state.respuesta_usuario.strip().lower() == st.session_state.correcta.strip().lower()
 
+    # Guardar resultado solo una vez
     guardar_resultado(
         st.session_state.usuario_id,
         st.session_state.usuario,
@@ -234,12 +235,20 @@ if st.session_state.t_reaccion is not None and not st.session_state.resultado_gu
 
     st.session_state.resultado_guardado = True  # Marcar que ya se guardó
 
+    # Mostrar feedback al usuario
     if es_correcta:
         st.success("¡Respuesta correcta! ✅")
     else:
         st.error(f"Respuesta incorrecta. La respuesta correcta era: {st.session_state.correcta} ❌")
 
     st.write(f"Tiempo de respuesta: {st.session_state.t_reaccion:.2f} segundos")
+
+    # Botón para continuar con el experimento
+    if st.button("Continuar"):
+        st.session_state.ensayo += 1
+        for key in ["definicion", "lista_opciones", "respuesta_usuario", "t_reaccion", "resultado_guardado"]:
+            st.session_state.pop(key, None)  # Limpiar variables relevantes
+        st.rerun()
 
 
 # -------- FINALIZACIÓN DEL EXPERIMENTO --------
