@@ -62,12 +62,10 @@ diccionario = {
     "Que se caracteriza por tener una forma redonda": {"respuesta": "redondo", "antonimo": "cuadrado"},
 }
 # -------- INICIALIZAR VARIABLES DE SESIÓN --------
-if "experimento_iniciado" not in st.session_state:
-    st.session_state.experimento_iniciado = False
-if "usuario_id" not in st.session_state:
-    st.session_state.usuario_id = str(uuid.uuid4())  # Genera un ID único por usuario
 if "usuario" not in st.session_state:
     st.session_state.usuario = None
+if "usuario_id" not in st.session_state:
+    st.session_state.usuario_id = str(uuid.uuid4())  # Genera un ID único por usuario
 
 if "ensayo" not in st.session_state:
     st.session_state.ensayo = 1
@@ -127,23 +125,19 @@ if st.session_state.usuario is None:
 else:
     st.write(f"¡Bienvenido {st.session_state.usuario}!")
 
-# -------- BOTÓN PARA INICIAR EL EXPERIMENTO --------
+# -------- BOTÓN DE INICIO DEL EXPERIMENTO --------
 if not st.session_state.experimento_iniciado:
     if st.button("🚀 Comenzar Experimento"):
         st.session_state.experimento_iniciado = True
         st.rerun()
-st.write(f"Estado del experimento: {st.session_state.experimento_iniciado}")
-
+    else:
+        st.stop()
 
 # -------- VARIABLES PARA EVITAR GUARDADOS DUPLICADOS --------
 if "resultado_guardado" not in st.session_state:
     st.session_state.resultado_guardado = False  # Para controlar el guardado de datos
     
 # -------- EXPERIMENTO --------
-# -------- INICIO DEL EXPERIMENTO --------
-if st.session_state.experimento_iniciado:
-    st.write("¡El experimento ha comenzado!")
-    # Aquí irá el código para mostrar preguntas y opciones
 # -------- TRANSICIÓN ENTRE CONDICIONES --------
 if st.session_state.ensayo == 4 and not st.session_state.transicion:
     st.warning("¡Has completado la fase de Prueba! Ahora pasaremos a la siguiente fase: **Definición → Significado**.")
@@ -216,9 +210,15 @@ if st.session_state.ensayo == 14 and not st.session_state.transicion:
     if st.session_state.t_reaccion is not None:
         es_correcta = st.session_state.respuesta_usuario.strip().lower() == st.session_state.correcta.strip().lower()
 
+        if es_correcta:
+        st.success("¡Respuesta correcta! ✅")
+    else:
+        st.error(f"Respuesta incorrecta. La respuesta correcta era: {st.session_state.correcta} ❌")
+
+    st.write(f"Tiempo de respuesta: {st.session_state.t_reaccion:.2f} segundos")
 
   # -------- GUARDADO EVITANDO DUPLICADOS --------
-if "t_reaccion" in st.session_state and st.session_state.t_reaccion is not None and not st.session_state.get("resultado_guardado", False):
+if st.session_state.t_reaccion is not None and not st.session_state.get("resultado_guardado", False):
     es_correcta = st.session_state.respuesta_usuario.strip().lower() == st.session_state.correcta.strip().lower()
 
     # Guardar resultado solo una vez
@@ -292,4 +292,3 @@ if excel_data:
         file_name="resultados_experimento.xlsx",
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
-
