@@ -62,8 +62,8 @@ diccionario = {
     "Que se caracteriza por tener una forma redonda": {"respuesta": "redondo", "antonimo": "cuadrado"},
 }
 # -------- INICIALIZAR VARIABLES DE SESIÓN --------
-if "usuario" not in st.session_state:
-    st.session_state.usuario = None
+if "experimento_iniciado" not in st.session_state:
+    st.session_state.experimento_iniciado = False
 if "usuario_id" not in st.session_state:
     st.session_state.usuario_id = str(uuid.uuid4())  # Genera un ID único por usuario
 
@@ -129,9 +129,9 @@ else:
 if not st.session_state.experimento_iniciado:
     if st.button("🚀 Comenzar Experimento"):
         st.session_state.experimento_iniciado = True
-        st.rerun()
+        st.experimental_rerun()  # Usar esta función para actualizar correctamente
     else:
-        st.stop()
+        st.stop()  # Asegura que no haga nada más si no se ha presionado el botón
 
 # -------- VARIABLES PARA EVITAR GUARDADOS DUPLICADOS --------
 if "resultado_guardado" not in st.session_state:
