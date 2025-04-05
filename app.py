@@ -68,6 +68,8 @@ if "usuario_id" not in st.session_state:
     st.session_state.usuario_id = str(uuid.uuid4())  # Genera un ID único por usuario
 if "condicion" not in st.session_state:
     st.session_state.condicion = "Prueba"
+if "resultado_guardado" not in st.session_state:
+    st.session_state.resultado_guardado = False
 
 if "ensayo" not in st.session_state:
     st.session_state.ensayo = 1
@@ -216,17 +218,18 @@ if st.session_state.ensayo <= 23:
         st.rerun()  # Forzar la actualización para mostrar el resultado sin que el tiempo siga contando
 
     # Mostrar resultado si ya hay una respuesta guardada
-    if st.session_state.t_reaccion is not None:
-        es_correcta = st.session_state.respuesta_usuario.strip().lower() == st.session_state.correcta.strip().lower()
+   if st.session_state.t_reaccion is not None:
+    es_correcta = st.session_state.respuesta_usuario.strip().lower() == st.session_state.correcta.strip().lower()
 
-        if es_correcta:
-            st.success("¡Respuesta correcta! ✅")
-        else:
-            st.error(f"Respuesta incorrecta. La respuesta correcta era: {st.session_state.correcta} ❌")
+    if es_correcta:
+        st.success("¡Respuesta correcta! ✅")
+    else:
+        st.error(f"Respuesta incorrecta. La respuesta correcta era: {st.session_state.correcta} ❌")
 
-        st.write(f"Tiempo de respuesta: {st.session_state.t_reaccion:.2f} segundos")
+    st.write(f"Tiempo de respuesta: {st.session_state.t_reaccion:.2f} segundos")
 
-        # Guardar resultado
+    # Guardar solo una vez por ensayo
+    if not st.session_state.resultado_guardado:
         guardar_resultado(
             st.session_state.usuario_id,
             st.session_state.usuario,
@@ -237,7 +240,7 @@ if st.session_state.ensayo <= 23:
             st.session_state.correcta,
             st.session_state.t_reaccion
         )
-
+        st.session_state.resultado_guardado = True
     
         # Botón para continuar
         if st.button("Continuar"):
