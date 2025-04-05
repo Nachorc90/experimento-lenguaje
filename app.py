@@ -145,8 +145,8 @@ if not st.session_state.experimento_iniciado:
 
 # -------- EXPERIMENTO --------
 if st.session_state.ensayo <= 23:
-   
-   # Transición a Definición → Significado
+
+    # Transición a Definición → Significado
     if st.session_state.ensayo == 4 and not st.session_state.transicion_significado:
         st.warning("¡Has completado la fase de Prueba! Ahora pasaremos a la siguiente fase: **Definición → Significado**.")
         if st.button("Continuar con la segunda fase"):
@@ -156,10 +156,8 @@ if st.session_state.ensayo <= 23:
             st.rerun()
         else:
             st.stop()
-            
-  
-            
-  # Transición a Definición → Antónimo
+
+    # Transición a Definición → Antónimo
     if st.session_state.ensayo == 14 and not st.session_state.transicion_antonimo:
         st.warning("¡Has completado la fase de Definición → Significado! Ahora pasaremos a la fase final: **Definición → Antónimo**.")
         if st.button("Continuar con la siguiente fase"):
@@ -169,8 +167,8 @@ if st.session_state.ensayo <= 23:
             st.rerun()
         else:
             st.stop()
-            
-     # Generar nueva pregunta si es necesario
+
+    # Generar nueva pregunta si es necesario
     if "definicion" not in st.session_state:
         usadas = {
             "Prueba": st.session_state.usadas_prueba,
@@ -204,7 +202,7 @@ if st.session_state.ensayo <= 23:
         st.session_state.t_inicio = time.time()  # Iniciar tiempo de reacción
         st.session_state.t_reaccion = None  # Reiniciar el tiempo de reacción
 
-   # Mostrar ensayo
+    # Mostrar ensayo
     st.write(f"**Ensayo {st.session_state.ensayo}/23 - {st.session_state.condicion_actual}**")
     st.write(f"**Definición:** {st.session_state.definicion}")
 
@@ -218,36 +216,36 @@ if st.session_state.ensayo <= 23:
         st.rerun()  # Forzar la actualización para mostrar el resultado sin que el tiempo siga contando
 
     # Mostrar resultado si ya hay una respuesta guardada
-   if st.session_state.t_reaccion is not None:
-    es_correcta = st.session_state.respuesta_usuario.strip().lower() == st.session_state.correcta.strip().lower()
+    if st.session_state.t_reaccion is not None:
+        es_correcta = st.session_state.respuesta_usuario.strip().lower() == st.session_state.correcta.strip().lower()
 
-    if es_correcta:
-        st.success("¡Respuesta correcta! ✅")
-    else:
-        st.error(f"Respuesta incorrecta. La respuesta correcta era: {st.session_state.correcta} ❌")
+        if es_correcta:
+            st.success("¡Respuesta correcta! ✅")
+        else:
+            st.error(f"Respuesta incorrecta. La respuesta correcta era: {st.session_state.correcta} ❌")
 
-    st.write(f"Tiempo de respuesta: {st.session_state.t_reaccion:.2f} segundos")
+        st.write(f"Tiempo de respuesta: {st.session_state.t_reaccion:.2f} segundos")
 
-    # Guardar solo una vez por ensayo
-    if not st.session_state.resultado_guardado:
-        guardar_resultado(
-            st.session_state.usuario_id,
-            st.session_state.usuario,
-            st.session_state.ensayo,
-            st.session_state.condicion_actual,
-            st.session_state.definicion,
-            st.session_state.respuesta_usuario,
-            st.session_state.correcta,
-            st.session_state.t_reaccion
-        )
-        st.session_state.resultado_guardado = True
-    
+        # Guardar solo una vez por ensayo
+        if not st.session_state.resultado_guardado:
+            guardar_resultado(
+                st.session_state.usuario_id,
+                st.session_state.usuario,
+                st.session_state.ensayo,
+                st.session_state.condicion_actual,
+                st.session_state.definicion,
+                st.session_state.respuesta_usuario,
+                st.session_state.correcta,
+                st.session_state.t_reaccion
+            )
+            st.session_state.resultado_guardado = True
+
         # Botón para continuar
         if st.button("Continuar"):
             st.session_state.ensayo += 1
-            for key in ["definicion", "lista_opciones", "respuesta_usuario", "t_reaccion"]:
-                st.session_state.pop(key, None)  # Limpiar variables relevantes
-            st.rerun()
+            st.session_state.resultado_guardado = False  # Resetear para el siguiente
+            for key in ["definicion", "lista_opciones", "_
+
 
 # -------- FINALIZACIÓN DEL EXPERIMENTO --------
 if st.session_state.ensayo > 23:
