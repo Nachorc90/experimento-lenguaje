@@ -156,6 +156,7 @@ if st.session_state.ensayo <= 23:
             st.session_state.condicion_actual = "Definición → Antónimo"
             st.session_state.usadas_antonimo = set()  # Asegurar que el set de palabras se reinicia
             st.session_state.ensayo += 1  # Avanzamos al siguiente ensayo
+            st.session_state.transicion = False
             st.rerun()  # Forzar la actualización de la interfaz
         else:
             st.stop()
