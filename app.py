@@ -254,20 +254,23 @@ if st.session_state.ensayo > 23:
 def descargar_resultados_excel():
     try:
         conn = sqlite3.connect('experimento.db')
-        df = pd.read_sql_query("SELECT * FROM resultados", conn)
+        df = pd.read_sql_query(
+            "SELECT * FROM resultados WHERE usuario_id = ?", 
+            conn, 
+            params=(st.session_state.usuario_id,)
+        )
         conn.close()
-        
+
         if df.empty:
-            st.warning("⚠️ No hay datos disponibles para descargar.")
+            st.warning("⚠️ No hay datos disponibles para este usuario.")
             return None
-        
-        # Asegurar que las columnas están organizadas de manera correcta
+
         columnas_ordenadas = [
             "usuario_id", "usuario", "ensayo", "condicion", "definicion",
             "respuesta_usuario", "respuesta_correcta", "correcto", "tiempo_reaccion"
         ]
         df = df[columnas_ordenadas]
-        
+
         output = BytesIO()
         with pd.ExcelWriter(output, engine='openpyxl') as writer:
             df.to_excel(writer, index=False, sheet_name='Resultados')
