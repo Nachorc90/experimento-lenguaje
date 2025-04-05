@@ -245,7 +245,7 @@ if st.session_state.ensayo <= 23:
             st.session_state.ensayo += 1
             st.session_state.resultado_guardado = False  # Resetear para el siguiente
             for key in ["definicion", "lista_opciones", "respuesta_usuario", "t_reaccion"]:
-
+                st.session_state.pop(key, None)
 
 # -------- FINALIZACIÓN DEL EXPERIMENTO --------
 if st.session_state.ensayo > 23:
