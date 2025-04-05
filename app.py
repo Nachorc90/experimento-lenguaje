@@ -244,7 +244,7 @@ if st.session_state.ensayo <= 23:
         if st.button("Continuar"):
             st.session_state.ensayo += 1
             st.session_state.resultado_guardado = False  # Resetear para el siguiente
-            for key in ["definicion", "lista_opciones", "_
+            for key in ["definicion", "lista_opciones", "respuesta_usuario", "t_reaccion"]:
 
 
 # -------- FINALIZACIÓN DEL EXPERIMENTO --------
