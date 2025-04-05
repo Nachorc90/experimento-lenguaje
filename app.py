@@ -79,6 +79,12 @@ if "ensayo" not in st.session_state:
     st.session_state.usadas_significado = set()
     st.session_state.usadas_antonimo = set()
 
+# NUEVAS banderas para transiciones
+if "transicion_significado" not in st.session_state:
+    st.session_state.transicion_significado = False
+if "transicion_antonimo" not in st.session_state:
+    st.session_state.transicion_antonimo = False
+
 # -------- CONFIGURACIÓN DE BASE DE DATOS --------
 def inicializar_db():
     conn = sqlite3.connect('experimento.db')
@@ -137,27 +143,28 @@ if not st.session_state.experimento_iniciado:
 
 # -------- EXPERIMENTO --------
 if st.session_state.ensayo <= 23:
-    if st.session_state.ensayo == 4 and not st.session_state.transicion:
+   
+   # Transición a Definición → Significado
+    if st.session_state.ensayo == 4 and not st.session_state.transicion_significado:
         st.warning("¡Has completado la fase de Prueba! Ahora pasaremos a la siguiente fase: **Definición → Significado**.")
         if st.button("Continuar con la segunda fase"):
-            st.session_state.transicion = True  
-            st.session_state.usadas_significado = set()  
-            st.session_state.usadas_antonimo = set()
+            st.session_state.transicion_significado = True
             st.session_state.condicion_actual = "Definición → Significado"
-            st.rerun()  
+            st.session_state.ensayo += 1
+            st.rerun()
         else:
             st.stop()
             
-    if st.session_state.ensayo == 14 and not st.session_state.transicion:
+  
+            
+  # Transición a Definición → Antónimo
+    if st.session_state.ensayo == 14 and not st.session_state.transicion_antonimo:
         st.warning("¡Has completado la fase de Definición → Significado! Ahora pasaremos a la fase final: **Definición → Antónimo**.")
-
         if st.button("Continuar con la siguiente fase"):
-            st.session_state.transicion = True  # Marcamos que la transición está ocurriendo
+            st.session_state.transicion_antonimo = True
             st.session_state.condicion_actual = "Definición → Antónimo"
-            st.session_state.usadas_antonimo = set()  # Asegurar que el set de palabras se reinicia
-            st.session_state.ensayo += 1  # Avanzamos al siguiente ensayo
-            st.session_state.transicion = False
-            st.rerun()  # Forzar la actualización de la interfaz
+            st.session_state.ensayo += 1
+            st.rerun()
         else:
             st.stop()
             
