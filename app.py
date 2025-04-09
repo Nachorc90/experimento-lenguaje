@@ -272,6 +272,23 @@ def descargar_resultados_excel():
         output = BytesIO()
         with pd.ExcelWriter(output, engine='openpyxl') as writer:
             df.to_excel(writer, index=False, sheet_name='Resultados')
+
+            # Ajustar ancho de columnas
+            workbook = writer.book
+            worksheet = writer.sheets['Resultados']
+
+            for col in worksheet.columns:
+                max_length = 0
+                col_letter = col[0].column_letter  # Obtener letra de la columna (A, B, C, ...)
+                for cell in col:
+                    try:
+                        if cell.value:
+                            max_length = max(max_length, len(str(cell.value)))
+                    except:
+                        pass
+                adjusted_width = (max_length + 2)  # Ancho ajustado con un poco de margen
+                worksheet.column_dimensions[col_letter].width = adjusted_width
+
         output.seek(0)
         return output
     except Exception as e:
