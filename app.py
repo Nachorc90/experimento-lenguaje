@@ -62,7 +62,7 @@ diccionario = {
 if "usuario" not in st.session_state:
     st.session_state.usuario = None
 if "usuario_id" not in st.session_state:
-    st.session_state.usuario_id = str(random.randint(1000, 9999))
+    st.session_state.usuario_id = str(random.randint(10000, 99999))
 if "condicion" not in st.session_state:
     st.session_state.condicion = "Prueba"
 if "resultado_guardado" not in st.session_state:
