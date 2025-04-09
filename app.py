@@ -32,34 +32,31 @@ Completar.
 
 # -------- DICCIONARIO DE PALABRAS --------
 diccionario = {
-    # Nueva condición "Prueba"
-    "Proceso de adquirir conocimientos": {"respuesta": "aprender", "antonimo": "ignorar"},
-    "Capacidad de actuar con rapidez y precisión": {"respuesta": "ágil", "antonimo": "torpe"},
-    "Que causa asombro o admiración": {"respuesta": "sorprendente", "antonimo": "ordinario"},
-
-    # Condición "Definición → Significado"
-    "Estado de ánimo positivo y de alegría": {"respuesta": "feliz", "antonimo": "triste"},
-    "Movimiento a gran velocidad": {"respuesta": "rápido", "antonimo": "lento"},
-    "De dimensiones superiores a lo común": {"respuesta": "grande", "antonimo": "pequeño"},
-    "Que posee una notable resistencia o vigor": {"respuesta": "fuerte", "antonimo": "débil"},
-    "Con una gran cantidad de iluminación": {"respuesta": "claro", "antonimo": "oscuro"},
-    "Sin suciedad ni impurezas": {"respuesta": "limpio", "antonimo": "sucio"},
-    "De peso reducido": {"respuesta": "ligero", "antonimo": "pesado"},
-    "Lleno de energía y dinamismo": {"respuesta": "activo", "antonimo": "pasivo"},
-    "De textura suave y fácil de comprimir": {"respuesta": "blando", "antonimo": "duro"},
-    "Que se puede comprender sin dificultad": {"respuesta": "simple", "antonimo": "complejo"},
-
-    # Condición "Definición → Antónimo"
-    "Falta de luz o de claridad": {"respuesta": "oscuro", "antonimo": "claro"},
-    "Que no tiene mucha altura": {"respuesta": "bajo", "antonimo": "alto"},
-    "Que tiene una gran capacidad para aprender o entender": {"respuesta": "inteligente", "antonimo": "tonto"},
-    "Que tiene mucho color": {"respuesta": "vivo", "antonimo": "apagado"},
-    "Que tiene un fuerte deseo o impulso de hacer algo": {"respuesta": "ambicioso", "antonimo": "apático"},
-    "Que se refiere a algo que ha sido creado o producido por un ser humano": {"respuesta": "artificial", "antonimo": "natural"},
-    "Que pertenece a otro país": {"respuesta": "extranjero", "antonimo": "local"},
-    "Que tiene una gran capacidad para hacer cosas": {"respuesta": "hábil", "antonimo": "torpe"},
-    "Que provoca alegría o placer": {"respuesta": "divertido", "antonimo": "aburrido"},
-    "Que se caracteriza por tener una forma redonda": {"respuesta": "redondo", "antonimo": "cuadrado"},
+    
+    "De poca altura": {"respuesta": "bajo", "antonimo": "alto"},
+    "Que carece de luz": {"respuesta": "oscuro", "antonimo": "claro"},
+    "Que tiene o produce calor": {"respuesta": "caliente", "antonimo": "frio"},
+    "Que se mueve muy deprisa": {"respuesta": "rápido", "antonimo": "lento"},
+    "Estado de grata satisfacción espiritual y física": {"respuesta": "feliz", "antonimo": "triste"},
+    "Que tiene un alto precio o más alto de lo normal": {"respuesta": "caro", "antonimo": "barato"},
+    "Que tiene poco tamaño": {"respuesta": "pequeño", "antonimo": "grande"},
+    "Recién hecho o fabricado": {"respuesta": "nuevo", "antonimo": "viejo"},
+    "Dicho de algo que es particular o personal": {"respuesta": "privado", "antonimo": "público"},
+    "Que tiene longuitud": {"respuesta": "largo", "antonimo": "corto"},
+    "Que no requiere gran esfuerzo, habilidad o capacidad": {"respuesta": "fácil", "antonimo": "dificil"},
+    "Que no tiene mancha o suciedad": {"respuesta": "limpio", "antonimo": "sucio"},
+    "Que carece de agua u otro líquido": {"respuesta": "seco", "antonimo": "mojado"},
+    "Existente de hace mucho tiempo o que perdura": {"respuesta": "viejo", "antonimo": "nuevo"},
+    "Que supera el tamaño": {"respuesta": "grande", "antonimo": "pequeño"},
+    "Que goza de salud": {"respuesta": "sano", "antonimo": "enfermo"},
+    "Que no hace ruido": {"respuesta": "silencioso", "antonimo": "ruidoso"},
+    "Que impide el paso de luz": {"respuesta": "opaco", "antonimo": "transparente"},
+    "Sabio, experto, instruido": {"respuesta": "inteligente", "antonimo": "tonto"},
+    "Acrecentamiento o extensión de algo": {"respuesta": "aumento", "antonimo": "disminución"},
+    "Que se comporta de un modo inhabitual": {"respuesta": "raro", "antonimo": "común"},
+    "Libre de errores o defectos": {"respuesta": "correcto", "antonimo": "incorrecto"},
+    "Comienzo de algo": {"respuesta": "inicio", "antonimo": "final"},
+    "Algo ocupado hasta el límite": {"respuesta": "lleno", "antonimo": "Vacio"}
 }
 # -------- INICIALIZAR VARIABLES DE SESIÓN --------
 if "usuario" not in st.session_state:
