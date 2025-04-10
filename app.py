@@ -27,7 +27,17 @@ st.title("🧪 Experimento")
 
 st.markdown("## Normas del Experimento")
 st.markdown("""
-Completar.
+¡Hola! Gracias por participar en este experimento. A continuación, te explicamos lo que vas a hacer:
+A continuación van a leer una definición, tras ella verás tres palabras como opciones de respuesta con solo una palabra es la correcta.
+
+Primero realizaremos 3 ensayos de prueba en las que vas a tener que responder con el significado de la definición.
+
+Tras esta prueba empezaremos con los 10 ensayos en las que tienes que responder con la palabra que corresponde a la definición. 
+
+Y para terminar realizaras otros 10 ensayos pero esta vez tendras que responder con el antonimo a la definición. 
+
+Tener en cuenta: En cuanto le de al boton de comenzar el experimento, coemzará. Entre ensayos tiene que volver a presionar a continuar para seguir respondiendo.
+Cuando haya que cambiar de condición aparecera un mensaje de aviso junto al una boton de continuar. 
 """)
 
 # -------- DICCIONARIO DE PALABRAS --------
@@ -145,7 +155,7 @@ if st.session_state.ensayo <= 23:
 
     # Transición a Definición → Significado
     if st.session_state.ensayo == 4 and not st.session_state.transicion_significado:
-        st.warning("¡Has completado la fase de Prueba! Ahora pasaremos a la siguiente fase: **Definición → Significado**.")
+        st.warning("¡Has completado la fase de Prueba! Ahora pasaremos a la siguiente fase: 10 ensayos en las que tienes que responder con la palabra que corresponde a la definición.")
         if st.button("Continuar con la segunda fase"):
             st.session_state.transicion_significado = True
             st.session_state.condicion_actual = "Definición → Significado"
@@ -156,7 +166,7 @@ if st.session_state.ensayo <= 23:
 
     # Transición a Definición → Antónimo
     if st.session_state.ensayo == 14 and not st.session_state.transicion_antonimo:
-        st.warning("¡Has completado la fase de Definición → Significado! Ahora pasaremos a la fase final: **Definición → Antónimo**.")
+        st.warning("¡Has completado la segunda fase! Ahora pasaremos a la fase final: 10 ensayos pero esta vez tendras que responder con el antonimo a la definición.")
         if st.button("Continuar con la siguiente fase"):
             st.session_state.transicion_antonimo = True
             st.session_state.condicion_actual = "Definición → Antónimo"
@@ -246,7 +256,7 @@ if st.session_state.ensayo <= 23:
 
 # -------- FINALIZACIÓN DEL EXPERIMENTO --------
 if st.session_state.ensayo > 23:
-    st.success("🎉 **¡Has completado los 20 ensayos!**")
+    st.success("🎉 **¡Has completado el experimento! Gracias por participar **")
     st.write("📊 **Descarga tus resultados**")
 
 def descargar_resultados_excel():
