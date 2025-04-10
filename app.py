@@ -37,8 +37,11 @@ Tras esta prueba empezaremos con los 10 ensayos en las que tienes que responder 
 Y para terminar realizaras otros 10 ensayos pero esta vez, tendras que responder con el antonimo a la definición. 
 
 Tener en cuenta: 
+
 En cuanto le de al boton de comenzar el experimento, comenzará. 
+
 Entre ensayos tiene que volver a presionar a continuar para seguir respondiendo.
+
 Cuando haya que cambiar de condición aparecera un mensaje de aviso junto al una botón de continuar. 
 """)
 
