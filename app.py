@@ -28,6 +28,7 @@ st.title("🧪 Experimento")
 st.markdown("## Normas del Experimento")
 st.markdown("""
 Gracias por participar en este experimento. 
+
 A continuación van a leer una definición, tras ella verás tres palabras como opciones de respuesta en la que solo una corresponde a la definición.
 
 Primero realizaremos 3 ensayos de prueba en las que vas a tener que responder a la palabra que corresponde a la definición.
