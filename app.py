@@ -27,17 +27,19 @@ st.title("🧪 Experimento")
 
 st.markdown("## Normas del Experimento")
 st.markdown("""
-¡Hola! Gracias por participar en este experimento. A continuación, te explicamos lo que vas a hacer:
-A continuación van a leer una definición, tras ella verás tres palabras como opciones de respuesta con solo una palabra es la correcta.
+Gracias por participar en este experimento. 
+A continuación van a leer una definición, tras ella verás tres palabras como opciones de respuesta en la que solo una corresponde a la definición.
 
-Primero realizaremos 3 ensayos de prueba en las que vas a tener que responder con el significado de la definición.
+Primero realizaremos 3 ensayos de prueba en las que vas a tener que responder a la palabra que corresponde a la definición.
 
 Tras esta prueba empezaremos con los 10 ensayos en las que tienes que responder con la palabra que corresponde a la definición. 
 
-Y para terminar realizaras otros 10 ensayos pero esta vez tendras que responder con el antonimo a la definición. 
+Y para terminar realizaras otros 10 ensayos pero esta vez, tendras que responder con el antonimo a la definición. 
 
-Tener en cuenta: En cuanto le de al boton de comenzar el experimento, coemzará. Entre ensayos tiene que volver a presionar a continuar para seguir respondiendo.
-Cuando haya que cambiar de condición aparecera un mensaje de aviso junto al una boton de continuar. 
+Tener en cuenta: 
+En cuanto le de al boton de comenzar el experimento, comenzará. 
+Entre ensayos tiene que volver a presionar a continuar para seguir respondiendo.
+Cuando haya que cambiar de condición aparecera un mensaje de aviso junto al una botón de continuar. 
 """)
 
 # -------- DICCIONARIO DE PALABRAS --------
