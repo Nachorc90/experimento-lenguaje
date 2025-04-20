@@ -14,7 +14,7 @@ usuarios_preparados = set()
 usuarios_conectados = set()
 experimento_iniciado = False
 
-# -------- QR SOLO EN PANTALLA DE INICIO --------
+# -------- QR EN PANTALLA DE INICIO --------
 app_url = "https://experimento-lenguaje-evvnuoczsrg43edwgztyrv.streamlit.app/"
 qr = qrcode.make(app_url)
 qr_bytes = BytesIO()
@@ -23,7 +23,6 @@ st.image(qr_bytes, caption="Escanea el QR para acceder al experimento", use_cont
 
 # -------- INSTRUCCIONES --------
 st.title("🧪 Experimento")
-
 st.markdown("## Instrucciones")
 st.markdown("""
 1. Primero 3 ensayos de **PRUEBA** con ítems piloto.
@@ -34,7 +33,7 @@ st.markdown("""
 - El tiempo de reacción **se mide en el momento en que seleccionas una opción**.
 - Una vez elegida, la opción **no se puede cambiar**.
 - Tras seleccionar verás tu tiempo de reacción, y podrás avanzar con **Continuar**.
-- Descansa 30 s al finalizar cada fase.
+- Descansa 30 s al finalizar cada fase.
 - Al final podrás descargar tus resultados y ver un gráfico de tu tiempo medio por fase.
 """)
 
@@ -74,8 +73,6 @@ practice_dict = {
 }
 
 # -------- SESIÓN STATE --------
-if "usuario" not in st.session_state:
-    st.session_state.usuario = None
 if "usuario_id" not in st.session_state:
     st.session_state.usuario_id = str(random.randint(10000, 99999))
 if "ensayo" not in st.session_state:
@@ -87,10 +84,9 @@ if "ensayo" not in st.session_state:
     st.session_state.usadas_prueba = set()
     st.session_state.usadas_significado = set()
     st.session_state.usadas_antonimo = set()
-    st.session_state.t_reaccion = None
     st.session_state.respondido = False
 
-# -------- DB --------
+# -------- INICIALIZAR DB --------
 def inicializar_db():
     conn = sqlite3.connect('experimento.db')
     conn.execute('''CREATE TABLE IF NOT EXISTS resultados (
@@ -113,7 +109,15 @@ if not st.session_state.experimento_iniciado:
 
 # -------- TRANSICIONES DE FASE --------
 if st.session_state.ensayo == 4 and not st.session_state.transicion_significado:
-    st.warning("¡Has completado Prueba! Ahora 10 ensayos de SIGNIFICADO.")
+    # feedback fase Prueba
+    df = pd.read_sql_query(
+        "SELECT correcto, tiempo_reaccion FROM resultados WHERE usuario_id=? AND condicion='Prueba'",
+        sqlite3.connect('experimento.db'), params=(st.session_state.usuario_id,)
+    )
+    acc = df['correcto'].mean()*100 if not df.empty else 0
+    t_med = df['tiempo_reaccion'].mean() if not df.empty else 0
+    st.success(f"Fase 'Prueba' completada: Precisión {acc:.1f}% · Tiempo medio {t_med:.2f}s")
+    st.warning("¡Ahora 10 ensayos de SIGNIFICADO!")
     if st.button("Continuar"):
         st.session_state.transicion_significado = True
         st.session_state.condicion_actual = "Significado"
@@ -123,7 +127,15 @@ if st.session_state.ensayo == 4 and not st.session_state.transicion_significado:
         st.stop()
 
 if st.session_state.ensayo == 14 and not st.session_state.transicion_antonimo:
-    st.warning("¡Has completado Significado! Ahora 10 ensayos de ANTÓNIMO.")
+    # feedback fase Significado
+    df = pd.read_sql_query(
+        "SELECT correcto, tiempo_reaccion FROM resultados WHERE usuario_id=? AND condicion='Significado'",
+        sqlite3.connect('experimento.db'), params=(st.session_state.usuario_id,)
+    )
+    acc = df['correcto'].mean()*100 if not df.empty else 0
+    t_med = df['tiempo_reaccion'].mean() if not df.empty else 0
+    st.success(f"Fase 'Significado' completada: Precisión {acc:.1f}% · Tiempo medio {t_med:.2f}s")
+    st.warning("¡Ahora 10 ensayos de ANTÓNIMO!")
     if st.button("Continuar"):
         st.session_state.transicion_antonimo = True
         st.session_state.condicion_actual = "Antónimo"
@@ -136,51 +148,43 @@ if st.session_state.ensayo == 14 and not st.session_state.transicion_antonimo:
 if st.session_state.ensayo <= 23:
     if "definicion" not in st.session_state:
         pool = practice_dict if st.session_state.condicion_actual == "Prueba" else diccionario
-        usadas = (st.session_state.usadas_prueba
-                  if st.session_state.condicion_actual == "Prueba"
-                  else st.session_state.usadas_significado
-                  if st.session_state.condicion_actual == "Significado"
+        usadas = (st.session_state.usadas_prueba if st.session_state.condicion_actual == "Prueba"
+                  else st.session_state.usadas_significado if st.session_state.condicion_actual == "Significado"
                   else st.session_state.usadas_antonimo)
         disponibles = [k for k in pool if k not in usadas]
         definicion = random.choice(disponibles)
         usadas.add(definicion)
-        opciones_data = pool[definicion]
-        correcta = (opciones_data["respuesta"]
-                    if st.session_state.condicion_actual != "Antónimo"
-                    else opciones_data["antonimo"])
+        data = pool[definicion]
+        correcta = data["respuesta"] if st.session_state.condicion_actual != "Antónimo" else data["antonimo"]
         distractores = random.sample(
-            [v["respuesta"] for v in diccionario.values() if v["respuesta"] != correcta],
-            2
+            [v["respuesta"] for v in diccionario.values() if v["respuesta"] != correcta], 2
         )
-        # sin opción preseleccionada: placeholder + opciones reales
-        reales = [correcta] + distractores
-        random.shuffle(reales)
-        st.session_state.lista_opciones = reales
+        opciones = [correcta] + distractores
+        random.shuffle(opciones)
+        st.session_state.lista_opciones = opciones
         st.session_state.definicion = definicion
         st.session_state.correcta = correcta
         st.session_state.t_inicio = time.time()
-        st.session_state.t_reaccion = None
         st.session_state.respondido = False
 
     st.write(f"**Ensayo {st.session_state.ensayo}/23 - {st.session_state.condicion_actual}**")
     st.write(f"**Definición:** {st.session_state.definicion}")
 
-    opciones_radio = ["Selecciona..."] + st.session_state.lista_opciones
+    # radio sin preselección: index=None
     respuesta = st.radio(
         "Selecciona la opción correcta:",
-        opciones_radio,
-        index=0,
-        disabled=st.session_state.respondido,
-        key=f"radio{st.session_state.ensayo}"
+        st.session_state.lista_opciones,
+        index=None,
+        key=f"radio{st.session_state.ensayo}",
+        disabled=st.session_state.respondido
     )
 
-    # medir al elegir una opción válida
-    if not st.session_state.respondido and respuesta != "Selecciona...":
+    # medir al seleccionar
+    if not st.session_state.respondido and respuesta is not None:
         t = time.time() - st.session_state.t_inicio
         st.session_state.t_reaccion = t
         st.session_state.respuesta_usuario = respuesta
         st.session_state.respondido = True
-        # guardar resultado
         correcto = 1 if respuesta.lower() == st.session_state.correcta.lower() else 0
         with sqlite3.connect('experimento.db') as conn:
             conn.execute('''INSERT INTO resultados
