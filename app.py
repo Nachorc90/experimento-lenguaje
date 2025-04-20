@@ -4,7 +4,7 @@ import time
 import sqlite3
 import pandas as pd
 import qrcode
-import matplotlib.pyplot as plt
+import altair as alt
 from io import BytesIO
 from openpyxl import Workbook
 
@@ -221,14 +221,19 @@ if st.session_state.ensayo > 23:
     df_sig['trial'] = df_sig['ensayo'] - 3
     df_ant['trial'] = df_ant['ensayo'] - 13
     # Graficar
-    fig, ax = plt.subplots()
-    ax.plot(df_sig['trial'], df_sig['tiempo_reaccion'], label='Significado', color='red')
-    ax.plot(df_ant['trial'], df_ant['tiempo_reaccion'], label='Antónimo', color='blue')
-    ax.set_xlabel('Ensayo')
-    ax.set_ylabel('Tiempo de reacción (s)')
-    ax.set_title('Tiempos de reacción por ensayo')
-    ax.legend()
-    st.pyplot(fig)
+        # Crear gráfico con Altair
+    # Combinar datos de ambas fases con columna 'trial'
+    df_sig['trial'] = df_sig['ensayo'] - 3
+    df_ant['trial'] = df_ant['ensayo'] - 13
+    df_plot = pd.concat([df_sig, df_ant], ignore_index=True)
+    chart = alt.Chart(df_plot).mark_line(point=True).encode(
+        x=alt.X('trial:Q', title='Ensayo'),
+        y=alt.Y('tiempo_reaccion:Q', title='Tiempo de reacción (s)'),
+        color=alt.Color('condicion:N', title='Condición', scale=alt.Scale(domain=['Significado','Antónimo'], range=['red','blue']))
+    ).properties(
+        title='Tiempos de reacción por ensayo'
+    )
+    st.altair_chart(chart, use_container_width=True)
     # Descarga Excel completa
     df_export = pd.read_sql_query(
         "SELECT * FROM resultados WHERE usuario_id=?",
@@ -249,4 +254,5 @@ if st.session_state.ensayo > 23:
         file_name="resultados_experimento.xlsx",
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
+
 
