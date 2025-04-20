@@ -4,15 +4,11 @@ import time
 import sqlite3
 import pandas as pd
 import qrcode
-import uuid
 from io import BytesIO
 from openpyxl import Workbook
 
 # -------- CONFIGURACIONES --------
 MASTER_PASSWORD = "experimento123"
-usuarios_preparados = set()
-usuarios_conectados = set()
-experimento_iniciado = False
 
 # -------- QR EN PANTALLA DE INICIO --------
 app_url = "https://experimento-lenguaje-evvnuoczsrg43edwgztyrv.streamlit.app/"
@@ -25,18 +21,16 @@ st.image(qr_bytes, caption="Escanea el QR para acceder al experimento", use_cont
 st.title("🧪 Experimento")
 st.markdown("## Instrucciones")
 st.markdown("""
-A continuación van a leer una definición, tras ella verás tres palabras como opciones de respuesta en la que solo una corresponde a la definición.
+1. Primero 3 ensayos de **PRUEBA** con ítems piloto.
+2. Luego 10 ensayos respondiendo la palabra según la definición (**Significado**).
+3. Finalmente 10 ensayos respondiendo el **ANTÓNIMO** de la definición.
 
-Primero realizaremos 3 ensayos de prueba en las que vas a tener que responder a la palabra que corresponde a la definición.
-
-Tras esta prueba empezaremos con los 10 ensayos en las que tienes que responder con la palabra que corresponde a la definición. 
-
-Y para terminar realizaras otros 10 ensayos pero esta vez, tendras que responder con el antonimo a la definición. 
-
-Tener en cuenta:
-- En cuanto le de al boton de comenzar el experimento, comenzará. 
-- Entre ensayos tiene que volver a presionar a continuar para seguir respondiendo.
-- Cuando haya que cambiar de condición aparecera un mensaje de aviso junto al una botón de continuar. 
+- No habrá feedback de correcto/incorrecto hasta acabar cada fase.
+- El tiempo de reacción **se mide en el momento en que seleccionas una opción**.
+- Una vez elegida, la opción **no se puede cambiar**.
+- Tras seleccionar verás tu tiempo de reacción, y podrás avanzar con **Continuar**.
+- Descansa 30 s al finalizar cada fase.
+- Al final podrás descargar tus resultados y ver un gráfico de tu tiempo medio por fase.
 """)
 
 # -------- DICCIONARIO DE PALABRAS --------
@@ -69,11 +63,10 @@ diccionario = {
 
 # -------- PRÁCTICA PILOTO --------
 practice_dict = {
-    "Que tiene sonido suave y delicado": {"respuesta": "suave", "antonimo": "áspero"},
-    "Que es muy ligero y flota con facilidad en el agua": {"respuesta": "liviano", "antonimo": "pesado"},
-    "Que está realizado con gran atención a los detalles": {"respuesta": "minucioso", "antonimo": "superficial"}
+    "De pocas vitaminas": {"respuesta": "hipovitaminosis", "antonimo": "hipervitaminosis"},
+    "Que ruge muy fuerte": {"respuesta": "atronar", "antonimo": "susurrar"},
+    "Pieza musical breve": {"respuesta": "minueto", "antonimo": "sinfonía"}
 }
-
 
 # -------- SESIÓN STATE --------
 if "usuario_id" not in st.session_state:
@@ -220,12 +213,20 @@ if st.session_state.ensayo <= 23:
 # -------- FINAL Y DESCARGA --------
 if st.session_state.ensayo > 23:
     st.success("🎉 ¡Has completado el experimento! Gracias por participar.")
+    # Gráfico solo de Significado y Antónimo
     df = pd.read_sql_query(
         "SELECT condicion, AVG(tiempo_reaccion) as media FROM resultados WHERE usuario_id=? GROUP BY condicion",
         sqlite3.connect('experimento.db'),
         params=(st.session_state.usuario_id,)
     )
-    st.line_chart(df.set_index("condicion")["media"])
+    # Filtrar para excluir Prueba
+    df = df[df['condicion'].isin(['Significado', 'Antónimo'])]
+    if not df.empty:
+        st.line_chart(df.set_index('condicion')['media'])
+    else:
+        st.warning("No hay datos de Significado o Antónimo para mostrar.")
+
+    # Datos completos para descarga
     df_all = pd.read_sql_query(
         "SELECT * FROM resultados WHERE usuario_id=?",
         sqlite3.connect('experimento.db'),
@@ -234,11 +235,12 @@ if st.session_state.ensayo > 23:
     def to_excel(df):
         out = BytesIO()
         with pd.ExcelWriter(out, engine="openpyxl") as writer:
-            df.to_excel(writer,index=False,sheet_name="Resultados")
+            df.to_excel(writer, index=False, sheet_name="Resultados")
             for col in writer.sheets["Resultados"].columns:
                 m = max(len(str(c.value)) for c in col)
-                writer.sheets["Resultados"].column_dimensions[col[0].column_letter].width = m+2
-        out.seek(0); return out
+                writer.sheets["Resultados"].column_dimensions[col[0].column_letter].width = m + 2
+        out.seek(0)
+        return out
     st.download_button(
         "📥 Descargar Resultados en Excel",
         data=to_excel(df_all),
