@@ -227,7 +227,7 @@ if st.session_state.ensayo > 23:
     df_ant['trial'] = df_ant['ensayo'] - 13
     df_plot = pd.concat([df_sig, df_ant], ignore_index=True)
     chart = alt.Chart(df_plot).mark_line(point=True).encode(
-        x=alt.X('trial:Q', title='Ensayo', scale=alt.Scale(domain=[1,10]))  # añadido dominio 1-10,
+        x=alt.X('trial:Q', title='Ensayo', scale=alt.Scale(domain=[1,10])),
         y=alt.Y('tiempo_reaccion:Q', title='Tiempo de reacción (s)'),
         color=alt.Color('condicion:N', title='Condición', scale=alt.Scale(domain=['Significado','Antónimo'], range=['red','blue']))
     ).properties(
