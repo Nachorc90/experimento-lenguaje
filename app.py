@@ -220,21 +220,32 @@ if st.session_state.ensayo > 23:
     # Calcular número de ensayo dentro de la fase
     df_sig['trial'] = df_sig['ensayo'] - 3
     df_ant['trial'] = df_ant['ensayo'] - 13
-    # Graficar
-        # Crear gráfico con Altair
-    # Combinar datos de ambas fases con columna 'trial'
-    df_sig['trial'] = df_sig['ensayo'] - 3
-    df_ant['trial'] = df_ant['ensayo'] - 13
+    # Graficar tiempos por ensayo
     df_plot = pd.concat([df_sig, df_ant], ignore_index=True)
-    chart = alt.Chart(df_plot).mark_line(point=True).encode(
+    chart1 = alt.Chart(df_plot).mark_line(point=True).encode(
         x=alt.X('trial:Q', title='Ensayo'),
         y=alt.Y('tiempo_reaccion:Q', title='Tiempo de reacción (s)'),
-        color=alt.Color('condicion:N', title='Condición', scale=alt.Scale(domain=['Significado','Antónimo'], range=['red','blue']))
+        color=alt.Color('condicion:N', title='Condición',
+                        scale=alt.Scale(domain=['Significado','Antónimo'],
+                                        range=['red','blue']))
     ).properties(
         title='Tiempos de reacción por ensayo'
-    )
-    st.altair_chart(chart, use_container_width=True)
-    # Descarga Excel completa
+    )  # añadido
+    st.altair_chart(chart1, use_container_width=True)  # añadido
+
+    # Gráfico de media por fase
+    df_mean = df_plot.groupby('condicion')['tiempo_reaccion'].mean().reset_index()  # añadido
+    chart2 = alt.Chart(df_mean).mark_bar().encode(
+        x=alt.X('condicion:N', title='Condición'),
+        y=alt.Y('tiempo_reaccion:Q', title='Tiempo medio (s)'),
+        color=alt.Color('condicion:N', scale=alt.Scale(domain=['Significado','Antónimo'],
+                                                        range=['red','blue']))
+    ).properties(
+        title='Tiempo medio por fase'
+    )  # añadido
+    st.altair_chart(chart2, use_container_width=True)  # añadido
+
+    # Descarga completa en Excel
     df_export = pd.read_sql_query(
         "SELECT * FROM resultados WHERE usuario_id=?",
         sqlite3.connect('experimento.db'), params=(st.session_state.usuario_id,)
@@ -254,5 +265,4 @@ if st.session_state.ensayo > 23:
         file_name="resultados_experimento.xlsx",
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
-
 
