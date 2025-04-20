@@ -206,21 +206,15 @@ if st.session_state.ensayo <= 23:
             st.session_state.ensayo += 1
             for k in ["definicion","lista_opciones","respuesta_usuario"]:
                 st.session_state.pop(k, None)
-            st.session_state.respondido = False
-            st.rerun()
-    else:
-        st.info("Selecciona una opción para responder...")
-
 # -------- FINAL Y DESCARGA --------
 if st.session_state.ensayo > 23:
     st.success("🎉 ¡Has completado el experimento! Gracias por participar.")
-    # Gráfico solo de Significado y Antónimo
-    df = pd.read_sql_query(
-        "SELECT condicion, AVG(tiempo_reaccion) as media FROM resultados WHERE usuario_id=? GROUP BY condicion",
-        sqlite3.connect('experimento.db'),
-        params=(st.session_state.usuario_id,)
+    # Recuperar todos los datos
+    df_all = pd.read_sql_query(
+        "SELECT ensayo, condicion, tiempo_reaccion FROM resultados WHERE usuario_id=?",
+        sqlite3.connect('experimento.db'), params=(st.session_state.usuario_id,)
     )
- # Filtrar Significado y Antónimo
+    # Filtrar Significado y Antónimo
     df_sig = df_all[df_all['condicion']=='Significado'].copy()
     df_ant = df_all[df_all['condicion']=='Antónimo'].copy()
     # Calcular número de ensayo dentro de la fase
@@ -235,12 +229,10 @@ if st.session_state.ensayo > 23:
     ax.set_title('Tiempos de reacción por ensayo')
     ax.legend()
     st.pyplot(fig)
-
-    # Datos completos para descarga
-    df_all = pd.read_sql_query(
+    # Descarga Excel completa
+    df_export = pd.read_sql_query(
         "SELECT * FROM resultados WHERE usuario_id=?",
-        sqlite3.connect('experimento.db'),
-        params=(st.session_state.usuario_id,)
+        sqlite3.connect('experimento.db'), params=(st.session_state.usuario_id,)
     )
     def to_excel(df):
         out = BytesIO()
@@ -248,12 +240,13 @@ if st.session_state.ensayo > 23:
             df.to_excel(writer, index=False, sheet_name="Resultados")
             for col in writer.sheets["Resultados"].columns:
                 m = max(len(str(c.value)) for c in col)
-                writer.sheets["Resultados"].column_dimensions[col[0].column_letter].width = m + 2
+                writer.sheets["Resultados"].column_dimensions[col[0].column_letter].width = m+2
         out.seek(0)
         return out
     st.download_button(
         "📥 Descargar Resultados en Excel",
-        data=to_excel(df_all),
+        data=to_excel(df_export),
         file_name="resultados_experimento.xlsx",
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
+
