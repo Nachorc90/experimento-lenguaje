@@ -4,46 +4,21 @@ import time
 import sqlite3
 import pandas as pd
 import qrcode
-import uuid
-from io import BytesIO
-from openpyxl import Workbook
+import hashlib
 from io import BytesIO
 
 # -------- CONFIGURACIONES --------
-MASTER_PASSWORD = "experimento123"
-usuarios_preparados = set()
-usuarios_conectados = set()
-experimento_iniciado = False
+MASTER_PASSWORD = st.secrets["MASTER_PASSWORD"]
 
-# -------- QR SOLO EN PANTALLA DE INICIO --------
-app_url = "https://experimento-lenguaje-evvnuoczsrg43edwgztyrv.streamlit.app/"
-qr = qrcode.make(app_url)
-qr_bytes = BytesIO()
-qr.save(qr_bytes, format="PNG")
-st.image(qr_bytes, caption="Escanea el QR para acceder al experimento", use_container_width=True)
+# -------- ÍTEMS DE PRÁCTICA (no reaparecen en el experimento) --------
+practice_dict = {
+    "De pocas vitaminas": {"respuesta": "hipovitaminosis", "antonimo": "hipervitaminosis"},
+    "Que ruge muy fuerte": {"respuesta": "atronar", "antonimo": "susurrar"},
+    "Pieza musical breve": {"respuesta": "minueto", "antonimo": "sinfonía"},
+}
 
-# -------- INSTRUCCIONES --------
-st.title("🧪 Experimento")
-
-st.markdown("## Instrucciones")
-st.markdown("""
-A continuación van a leer una definición, tras ella verás tres palabras como opciones de respuesta en la que solo una corresponde a la definición.
-
-Primero realizaremos 3 ensayos de prueba en las que vas a tener que responder a la palabra que corresponde a la definición.
-
-Tras esta prueba empezaremos con los 10 ensayos en las que tienes que responder con la palabra que corresponde a la definición. 
-
-Y para terminar realizaras otros 10 ensayos pero esta vez, tendras que responder con el antonimo a la definición. 
-
-Tener en cuenta:
-- En cuanto le de al boton de comenzar el experimento, comenzará. 
-- Entre ensayos tiene que volver a presionar a continuar para seguir respondiendo.
-- Cuando haya que cambiar de condición aparecera un mensaje de aviso junto al una botón de continuar. 
-""")
-
-# -------- DICCIONARIO DE PALABRAS --------
+# -------- DICCIONARIO PRINCIPAL --------
 diccionario = {
-    
     "De poca altura": {"respuesta": "bajo", "antonimo": "alto"},
     "Que carece de luz": {"respuesta": "oscuro", "antonimo": "claro"},
     "Que tiene o produce calor": {"respuesta": "caliente", "antonimo": "frio"},
@@ -69,249 +44,197 @@ diccionario = {
     "Comienzo de algo": {"respuesta": "inicio", "antonimo": "final"},
     "Algo ocupado hasta el límite": {"respuesta": "lleno", "antonimo": "Vacio"}
 }
-# -------- INICIALIZAR VARIABLES DE SESIÓN --------
-if "usuario" not in st.session_state:
-    st.session_state.usuario = None
+
+# -------- CANAL DE LOGIN ANÓNIMO --------
 if "usuario_id" not in st.session_state:
-    st.session_state.usuario_id = str(random.randint(10000, 99999))
-if "condicion" not in st.session_state:
-    st.session_state.condicion = "Prueba"
-if "resultado_guardado" not in st.session_state:
+    st.title("🧪 Experimento Anónimo")
+    user_input = st.text_input("Introduce tu identificador (anónimo)")
+    if st.button("Continuar") and user_input:
+        uid = hashlib.sha256(user_input.encode()).hexdigest()
+        st.session_state.usuario_id = uid
+        st.experimental_rerun()
+    else:
+        st.stop()
+
+# -------- ORDEN DE BLOQUES CONTRABALANCEADO --------
+if "block_order" not in st.session_state:
+    phases = ["Definición → Significado", "Definición → Antónimo"]
+    random.shuffle(phases)
+    st.session_state.block_order = ["Prueba"] + phases
+    st.session_state.phase_idx = 0
+    st.session_state.trial_in_phase = 1
     st.session_state.resultado_guardado = False
+    st.session_state.used = {phase: set() for phase in st.session_state.block_order}
 
-if "ensayo" not in st.session_state:
-    st.session_state.ensayo = 1
-    st.session_state.resultados = []
-    st.session_state.condicion_actual =  "Prueba"
-    st.session_state.transicion = False
-    st.session_state.experimento_iniciado = False
-    st.session_state.usadas_prueba = set()
-    st.session_state.usadas_significado = set()
-    st.session_state.usadas_antonimo = set()
+phase = st.session_state.block_order[st.session_state.phase_idx]
+max_trials = 3 if phase == "Prueba" else 10
 
-# NUEVAS banderas para transiciones
-if "transicion_significado" not in st.session_state:
-    st.session_state.transicion_significado = False
-if "transicion_antonimo" not in st.session_state:
-    st.session_state.transicion_antonimo = False
-
-# -------- CONFIGURACIÓN DE BASE DE DATOS --------
+# -------- INICIALIZAR BASE DE DATOS --------
 def inicializar_db():
     conn = sqlite3.connect('experimento.db')
     c = conn.cursor()
     c.execute('''CREATE TABLE IF NOT EXISTS resultados (
                     usuario_id TEXT,
-                    usuario TEXT,
                     ensayo INTEGER,
                     condicion TEXT,
                     definicion TEXT,
                     respuesta_usuario TEXT,
                     respuesta_correcta TEXT,
-                    correcto BOOLEAN,
+                    correcto INTEGER,
                     tiempo_reaccion REAL
                 )''')
-    conn.commit()
-    conn.close()
+    conn.commit(); conn.close()
 
 inicializar_db()
 
-# -------- GUARDAR RESULTADO --------
-def guardar_resultado(usuario_id, usuario, ensayo, condicion, definicion, respuesta, correcta, tiempo):
-    acierto = 1 if respuesta.strip().lower() == correcta.strip().lower() else 0
-    try:
-        with sqlite3.connect('experimento.db') as conn:
-            cursor = conn.cursor()
-            cursor.execute('''
-                INSERT INTO resultados (usuario_id, usuario, ensayo, condicion, definicion, respuesta_usuario, respuesta_correcta, correcto, tiempo_reaccion)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-            ''', (usuario_id, usuario, ensayo, condicion, definicion, respuesta, correcta, acierto, tiempo))
-            conn.commit()
-    except sqlite3.Error as e:
-        st.error(f"Error al guardar el resultado en la base de datos: {e}")
+# -------- QR EN PANTALLA DE INICIO --------
+app_url = "https://experimento-lenguaje-evvnuoczsrg43edwgztyrv.streamlit.app/"
+qr = qrcode.make(app_url)
+qr_bytes = BytesIO()
+qr.save(qr_bytes, format="PNG")
+st.image(qr_bytes, caption="Escanea el QR para acceder al experimento", use_container_width=True)
 
-# -------- FORMULARIO DE INICIO DE SESIÓN --------
-if st.session_state.usuario is None:
-    usuario = st.text_input("Usuario")
-    contraseña = st.text_input("Contraseña", type="password")
-    if st.button("Iniciar sesión"):
-        if usuario == "admin" and contraseña == MASTER_PASSWORD:
-            st.session_state.usuario = "admin"
-            st.success("¡Has iniciado sesión como administrador!")
-            st.rerun()
-        else:
-            st.error("Credenciales incorrectas")
-else:
-    st.write(f"¡Bienvenido {st.session_state.usuario}!")
+# -------- INSTRUCCIONES --------
+st.title("🧪 Experimento")
+st.markdown("## Instrucciones")
+st.markdown("""
+1. Primero realizarás 3 ensayos de prueba con ítems piloto.
+2. Luego 10 ensayos respondiendo la palabra según la definición.
+3. Finalmente 10 ensayos respondiendo el antónimo de la definición.
 
-# -------- BOTÓN DE INICIO DEL EXPERIMENTO --------
-if not st.session_state.experimento_iniciado:
+- No verás feedback inmediato para no sesgar tus respuestas.
+- Solo podrás continuar tras responder cada ensayo.
+- Después de cada fase, verás un resumen y podrás descansar 30 s.
+- Al final verás un gráfico con tu tiempo medio por bloque.
+""")
+
+# -------- INICIO EXPERIMENTO --------
+if not st.session_state.get("started", False):
     if st.button("🚀 Comenzar Experimento"):
-        st.session_state.experimento_iniciado = True
-        st.rerun()
+        st.session_state.started = True
+        st.experimental_rerun()
     else:
         st.stop()
 
-# -------- EXPERIMENTO --------
-if st.session_state.ensayo <= 23:
-
-    # Transición a Definición → Significado
-    if st.session_state.ensayo == 4 and not st.session_state.transicion_significado:
-        st.warning("¡Has completado la fase de Prueba! Ahora pasaremos a la siguiente fase: 10 ensayos en las que tienes que responder con la palabra que corresponde a la definición.")
-        if st.button("Continuar con la segunda fase"):
-            st.session_state.transicion_significado = True
-            st.session_state.condicion_actual = "Definición → Significado"
-            st.session_state.ensayo += 1
-            st.rerun()
-        else:
-            st.stop()
-
-    # Transición a Definición → Antónimo
-    if st.session_state.ensayo == 14 and not st.session_state.transicion_antonimo:
-        st.warning("¡Has completado la segunda fase! Ahora pasaremos a la fase final: 10 ensayos pero esta vez tendras que responder con el antonimo a la definición.")
-        if st.button("Continuar con la siguiente fase"):
-            st.session_state.transicion_antonimo = True
-            st.session_state.condicion_actual = "Definición → Antónimo"
-            st.session_state.ensayo += 1
-            st.rerun()
-        else:
-            st.stop()
-
-    # Generar nueva pregunta si es necesario
+# -------- GENERAR PREGUNTA --------
+if st.session_state.trial_in_phase <= max_trials:
     if "definicion" not in st.session_state:
-        usadas = {
-            "Prueba": st.session_state.usadas_prueba,
-            "Definición → Significado": st.session_state.usadas_significado,
-            "Definición → Antónimo": st.session_state.usadas_antonimo,
-        }[st.session_state.condicion_actual]
-
-        definiciones_disponibles = [k for k in diccionario.keys() if k not in usadas]
-
-        if not definiciones_disponibles:
-            st.warning("No quedan más definiciones disponibles.")
-            st.stop()
-
-        definicion = random.choice(definiciones_disponibles)
-        usadas.add(definicion)
-
-        opciones = diccionario[definicion]
-        correcta = opciones["respuesta"] if st.session_state.condicion_actual != "Definición → Antónimo" else opciones["antonimo"]
-
-        respuestas_posibles = [correcta]
-        otras_palabras = [v["respuesta"] for v in diccionario.values() if v["respuesta"] not in respuestas_posibles]
-
-        distractores = random.sample([w for w in otras_palabras if w != correcta], 2)
-        lista_opciones = [correcta] + distractores
-        random.shuffle(lista_opciones)
-
-        # Guardar en la sesión
+        pool = practice_dict if phase == "Prueba" else diccionario
+        disponibles = [k for k in pool if k not in st.session_state.used[phase]]
+        definicion = random.choice(disponibles)
+        st.session_state.used[phase].add(definicion)
+        opciones = pool[definicion]
+        correcta = opciones["respuesta"] if phase != "Definición → Antónimo" else opciones["antonimo"]
+        distractores = random.sample(
+            [v["respuesta"] for v in diccionario.values() if v["respuesta"] != correcta],
+            2
+        )
+        lista = [correcta] + distractores
+        random.shuffle(lista)
         st.session_state.definicion = definicion
         st.session_state.correcta = correcta
-        st.session_state.lista_opciones = lista_opciones
-        st.session_state.t_inicio = time.time()  # Iniciar tiempo de reacción
-        st.session_state.t_reaccion = None  # Reiniciar el tiempo de reacción
+        st.session_state.opciones = lista
+        st.session_state.t_start = time.time()
+        st.session_state.t_reaction = None
 
-    # Mostrar ensayo
-    st.write(f"**Ensayo {st.session_state.ensayo}/23 - {st.session_state.condicion_actual}**")
+    st.markdown(f"**Fase: {phase} — Ensayo {st.session_state.trial_in_phase}/{max_trials}**")
     st.write(f"**Definición:** {st.session_state.definicion}")
+    respuesta = st.radio("Selecciona una opción:", st.session_state.opciones)
 
-    # Mostrar opciones y capturar respuesta
-    respuesta = st.radio("Selecciona la opción correcta:", st.session_state.lista_opciones, index=None)
+    if respuesta and st.session_state.t_reaction is None:
+        st.session_state.t_reaction = time.time() - st.session_state.t_start
+        st.session_state.user_answer = respuesta
 
-    # Si el usuario responde y aún no se ha calculado el tiempo de reacción
-    if respuesta and st.session_state.t_reaccion is None:
-        st.session_state.t_reaccion = time.time() - st.session_state.t_inicio  # Guardar el tiempo de reacción
-        st.session_state.respuesta_usuario = respuesta  # Guardar la respuesta seleccionada
-        st.rerun()  # Forzar la actualización para mostrar el resultado sin que el tiempo siga contando
-
-    # Mostrar resultado si ya hay una respuesta guardada
-    if st.session_state.t_reaccion is not None:
-        es_correcta = st.session_state.respuesta_usuario.strip().lower() == st.session_state.correcta.strip().lower()
-
-        if es_correcta:
-            st.success("¡Respuesta correcta! ✅")
-        else:
-            st.error(f"Respuesta incorrecta. La respuesta correcta era: {st.session_state.correcta} ❌")
-
-        st.write(f"Tiempo de respuesta: {st.session_state.t_reaccion:.2f} segundos")
-
-        # Guardar solo una vez por ensayo
-        if not st.session_state.resultado_guardado:
-            guardar_resultado(
-                st.session_state.usuario_id,
-                st.session_state.usuario,
-                st.session_state.ensayo,
-                st.session_state.condicion_actual,
-                st.session_state.definicion,
-                st.session_state.respuesta_usuario,
-                st.session_state.correcta,
-                st.session_state.t_reaccion
-            )
-            st.session_state.resultado_guardado = True
-
-        # Botón para continuar
+    if st.session_state.t_reaction is not None:
         if st.button("Continuar"):
-            st.session_state.ensayo += 1
-            st.session_state.resultado_guardado = False  # Resetear para el siguiente
-            for key in ["definicion", "lista_opciones", "respuesta_usuario", "t_reaccion"]:
-                st.session_state.pop(key, None)
+            correcto = int(st.session_state.user_answer.lower() == st.session_state.correcta.lower())
+            ensayo_global = (
+                st.session_state.trial_in_phase
+                + sum(3 if p == "Prueba" else 10 for p in st.session_state.block_order[:st.session_state.phase_idx])
+            )
+            with sqlite3.connect('experimento.db') as conn:
+                conn.execute('''INSERT INTO resultados
+                    (usuario_id, ensayo, condicion, definicion,
+                     respuesta_usuario, respuesta_correcta, correcto, tiempo_reaccion)
+                    VALUES (?,?,?,?,?,?,?,?)''',
+                    (
+                        st.session_state.usuario_id,
+                        ensayo_global,
+                        phase,
+                        st.session_state.definicion,
+                        st.session_state.user_answer,
+                        st.session_state.correcta,
+                        correcto,
+                        st.session_state.t_reaction
+                    )
+                )
+                conn.commit()
+            st.session_state.trial_in_phase += 1
+            for k in ["definicion", "correcta", "opciones", "t_start", "t_reaction", "user_answer"]:
+                st.session_state.pop(k, None)
+            st.experimental_rerun()
+    else:
+        st.info("Selecciona una opción para continuar...")
 
-# -------- FINALIZACIÓN DEL EXPERIMENTO --------
-if st.session_state.ensayo > 23:
-    st.success("🎉 **¡Has completado el experimento! Gracias por participar **")
-    st.write("📊 **Descarga tus resultados**")
+# -------- TRANSICIÓN ENTRE FASES --------
+elif st.session_state.trial_in_phase > max_trials and st.session_state.phase_idx < len(st.session_state.block_order):
+    conn = sqlite3.connect('experimento.db')
+    df = pd.read_sql_query(
+        "SELECT correcto, tiempo_reaccion FROM resultados WHERE usuario_id = ? AND condicion = ?",
+        conn, params=(st.session_state.usuario_id, phase)
+    )
+    conn.close()
+    if not df.empty:
+        acc = df['correcto'].mean() * 100
+        t_med = df['tiempo_reaccion'].mean()
+        st.success(f"Fase '{phase}' completada: Precisión {acc:.1f}% · Tiempo medio {t_med:.2f}s")
+    st.warning("Descansa 30 s y presiona continuar cuando estés listo.")
+    if st.button("Continuar"):
+        st.session_state.phase_idx += 1
+        st.session_state.trial_in_phase = 1
+        st.experimental_rerun()
+    else:
+        st.stop()
 
-def descargar_resultados_excel():
-    try:
-        conn = sqlite3.connect('experimento.db')
-        df = pd.read_sql_query(
-            "SELECT * FROM resultados WHERE usuario_id = ?", 
-            conn, 
-            params=(st.session_state.usuario_id,)
-        )
-        conn.close()
-
-        if df.empty:
-            st.warning("⚠️ No hay datos disponibles para este usuario.")
-            return None
-
-        columnas_ordenadas = [
-            "usuario_id", "usuario", "ensayo", "condicion", "definicion",
-            "respuesta_usuario", "respuesta_correcta", "correcto", "tiempo_reaccion"
-        ]
-        df = df[columnas_ordenadas]
-
+# -------- FINALIZACIÓN Y GRÁFICO --------
+if st.session_state.phase_idx >= len(st.session_state.block_order):
+    st.success("🎉 ¡Has completado todo el experimento!")
+    conn = sqlite3.connect('experimento.db')
+    df_all = pd.read_sql_query(
+        "SELECT condicion, tiempo_reaccion FROM resultados WHERE usuario_id = ?",
+        conn, params=(st.session_state.usuario_id,)
+    )
+    conn.close()
+    st.markdown("## Tu tiempo medio por bloque")
+    if not df_all.empty:
+        chart_data = df_all.groupby('condicion')['tiempo_reaccion'].mean()
+        st.line_chart(chart_data)
+    else:
+        st.warning("No hay datos para mostrar.")
+    
+    def to_excel(df):
         output = BytesIO()
         with pd.ExcelWriter(output, engine='openpyxl') as writer:
             df.to_excel(writer, index=False, sheet_name='Resultados')
-
-            # Ajustar ancho de columnas
             workbook = writer.book
             worksheet = writer.sheets['Resultados']
-
             for col in worksheet.columns:
                 max_length = 0
-                col_letter = col[0].column_letter  # Obtener letra de la columna (A, B, C, ...)
+                col_letter = col[0].column_letter
                 for cell in col:
-                    try:
-                        if cell.value:
-                            max_length = max(max_length, len(str(cell.value)))
-                    except:
-                        pass
-                adjusted_width = (max_length + 2)  # Ancho ajustado con un poco de margen
-                worksheet.column_dimensions[col_letter].width = adjusted_width
-
+                    if cell.value:
+                        max_length = max(max_length, len(str(cell.value)))
+                worksheet.column_dimensions[col_letter].width = max_length + 2
         output.seek(0)
         return output
-    except Exception as e:
-        st.error(f"Error al generar el archivo Excel: {e}")
-        return None
 
-# -------- INTERFAZ DE DESCARGA --------
-st.title("📊 Resultados del Experimento")
-excel_data = descargar_resultados_excel()
-if excel_data:
+    df_export = pd.read_sql_query(
+        "SELECT * FROM resultados WHERE usuario_id = ?",
+        sqlite3.connect('experimento.db'), params=(st.session_state.usuario_id,)
+    )
+    excel_data = to_excel(df_export)
     st.download_button(
-        label="📥 Descargar Resultados en Excel",
+        "📥 Descargar Resultados en Excel",
         data=excel_data,
         file_name="resultados_experimento.xlsx",
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
