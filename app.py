@@ -25,16 +25,18 @@ st.image(qr_bytes, caption="Escanea el QR para acceder al experimento", use_cont
 st.title("🧪 Experimento")
 st.markdown("## Instrucciones")
 st.markdown("""
-1. Primero 3 ensayos de **PRUEBA** con ítems piloto.
-2. Luego 10 ensayos respondiendo la palabra según la definición (**Significado**).
-3. Finalmente 10 ensayos respondiendo el **ANTÓNIMO** de la definición.
+A continuación van a leer una definición, tras ella verás tres palabras como opciones de respuesta en la que solo una corresponde a la definición.
 
-- No habrá feedback de correcto/incorrecto hasta acabar cada fase.
-- El tiempo de reacción **se mide en el momento en que seleccionas una opción**.
-- Una vez elegida, la opción **no se puede cambiar**.
-- Tras seleccionar verás tu tiempo de reacción, y podrás avanzar con **Continuar**.
-- Descansa 30 s al finalizar cada fase.
-- Al final podrás descargar tus resultados y ver un gráfico de tu tiempo medio por fase.
+Primero realizaremos 3 ensayos de prueba en las que vas a tener que responder a la palabra que corresponde a la definición.
+
+Tras esta prueba empezaremos con los 10 ensayos en las que tienes que responder con la palabra que corresponde a la definición. 
+
+Y para terminar realizaras otros 10 ensayos pero esta vez, tendras que responder con el antonimo a la definición. 
+
+Tener en cuenta:
+- En cuanto le de al boton de comenzar el experimento, comenzará. 
+- Entre ensayos tiene que volver a presionar a continuar para seguir respondiendo.
+- Cuando haya que cambiar de condición aparecera un mensaje de aviso junto al una botón de continuar. 
 """)
 
 # -------- DICCIONARIO DE PALABRAS --------
@@ -67,10 +69,11 @@ diccionario = {
 
 # -------- PRÁCTICA PILOTO --------
 practice_dict = {
-    "De pocas vitaminas": {"respuesta": "hipovitaminosis", "antonimo": "hipervitaminosis"},
-    "Que ruge muy fuerte": {"respuesta": "atronar", "antonimo": "susurrar"},
-    "Pieza musical breve": {"respuesta": "minueto", "antonimo": "sinfonía"}
+    "Que tiene sonido suave y delicado": {"respuesta": "suave", "antonimo": "áspero"},
+    "Que es muy ligero y flota con facilidad en el agua": {"respuesta": "liviano", "antonimo": "pesado"},
+    "Que está realizado con gran atención a los detalles": {"respuesta": "minucioso", "antonimo": "superficial"}
 }
+
 
 # -------- SESIÓN STATE --------
 if "usuario_id" not in st.session_state:
