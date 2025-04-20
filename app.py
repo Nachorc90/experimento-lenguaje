@@ -1,3 +1,4 @@
+
 import streamlit as st
 import random
 import time
@@ -103,35 +104,24 @@ def inicializar_db():
     conn.close()
 inicializar_db()
 
-# -------- LOGIN ADMIN (omito, igual que antes) --------
+# -------- LOGIN ADMIN (omito) --------
 
 # -------- INICIO EXPERIMENTO --------
 if not st.session_state.experimento_iniciado:
     if st.button("🚀 Comenzar Experimento"):
         st.session_state.experimento_iniciado = True
-        st.experimental_rerun()
+        st.rerun()
     else:
         st.stop()
 
-# -------- LÓGICA DE FASES --------
-def get_pool(cond):
-    return practice_dict if cond=="Prueba" else diccionario
-
-def get_usadas(cond):
-    return {
-        "Prueba": st.session_state.usadas_prueba,
-        "Significado": st.session_state.usadas_significado,
-        "Antónimo": st.session_state.usadas_antonimo
-    }[cond]
-
-# Ajuste de nombres de condición
+# -------- TRANSICIONES DE FASE --------
 if st.session_state.ensayo == 4 and not st.session_state.transicion_significado:
     st.warning("¡Has completado Prueba! Ahora 10 ensayos de SIGNIFICADO.")
     if st.button("Continuar"):
         st.session_state.transicion_significado = True
         st.session_state.condicion_actual = "Significado"
         st.session_state.ensayo += 1
-        st.experimental_rerun()
+        st.rerun()
     else:
         st.stop()
 
@@ -141,23 +131,28 @@ if st.session_state.ensayo == 14 and not st.session_state.transicion_antonimo:
         st.session_state.transicion_antonimo = True
         st.session_state.condicion_actual = "Antónimo"
         st.session_state.ensayo += 1
-        st.experimental_rerun()
+        st.rerun()
     else:
         st.stop()
 
 # -------- PREGUNTA --------
 if st.session_state.ensayo <= 23:
-    # generar si hace falta
     if "definicion" not in st.session_state:
-        pool = get_pool(st.session_state.condicion_actual)
-        usadas = get_usadas(st.session_state.condicion_actual)
+        pool = practice_dict if st.session_state.condicion_actual == "Prueba" else diccionario
+        usadas = (st.session_state.usadas_prueba
+                  if st.session_state.condicion_actual == "Prueba"
+                  else st.session_state.usadas_significado
+                  if st.session_state.condicion_actual == "Significado"
+                  else st.session_state.usadas_antonimo)
         disponibles = [k for k in pool if k not in usadas]
         definicion = random.choice(disponibles)
         usadas.add(definicion)
         opciones_data = pool[definicion]
-        correcta = opciones_data["respuesta"] if st.session_state.condicion_actual!="Antónimo" else opciones_data["antonimo"]
+        correcta = (opciones_data["respuesta"]
+                    if st.session_state.condicion_actual != "Antónimo"
+                    else opciones_data["antonimo"])
         distractores = random.sample(
-            [v["respuesta"] for v in diccionario.values() if v["respuesta"]!=correcta],
+            [v["respuesta"] for v in diccionario.values() if v["respuesta"] != correcta],
             2
         )
         st.session_state.lista_opciones = [correcta] + distractores
@@ -168,11 +163,10 @@ if st.session_state.ensayo <= 23:
         st.session_state.t_reaccion = None
         st.session_state.respondido = False
 
-    # mostrar
     st.write(f"**Ensayo {st.session_state.ensayo}/23 - {st.session_state.condicion_actual}**")
     st.write(f"**Definición:** {st.session_state.definicion}")
 
-    # radio habilitado sólo si no hemos respondido
+    # bloquear radio tras responder
     respuesta = st.radio(
         "Selecciona la opción correcta:",
         st.session_state.lista_opciones,
@@ -180,14 +174,13 @@ if st.session_state.ensayo <= 23:
         disabled=st.session_state.respondido
     )
 
-    # cuando seleccionan, medimos tiempo y bloqueamos
+    # medir al seleccionar
     if not st.session_state.respondido and respuesta:
         t = time.time() - st.session_state.t_inicio
         st.session_state.t_reaccion = t
         st.session_state.respuesta_usuario = respuesta
         st.session_state.respondido = True
-        # guardamos inmediatamente
-        correcto = 1 if respuesta.lower()==st.session_state.correcta.lower() else 0
+        correcto = 1 if respuesta.lower() == st.session_state.correcta.lower() else 0
         with sqlite3.connect('experimento.db') as conn:
             conn.execute('''
                 INSERT INTO resultados
@@ -195,7 +188,7 @@ if st.session_state.ensayo <= 23:
                  respuesta_usuario, respuesta_correcta,
                  correcto, tiempo_reaccion)
                 VALUES (?,?,?,?,?,?,?,?)
-            ''',(
+            ''', (
                 st.session_state.usuario_id,
                 st.session_state.ensayo,
                 st.session_state.condicion_actual,
@@ -206,32 +199,27 @@ if st.session_state.ensayo <= 23:
                 t
             ))
             conn.commit()
-        # mostramos el tiempo
         st.write(f"🕒 Tiempo de respuesta: {t:.2f} segundos")
 
-    # botón continuar aparece sólo tras responder
     if st.session_state.respondido:
         if st.button("Continuar"):
-            # reset para siguiente
             st.session_state.ensayo += 1
             for k in ["definicion","lista_opciones","respuesta_usuario"]:
                 st.session_state.pop(k, None)
-            st.session_state.respondido=False
-            st.experimental_rerun()
+            st.session_state.respondido = False
+            st.rerun()
     else:
         st.info("Selecciona una opción para responder...")
 
 # -------- FINAL Y DESCARGA --------
-if st.session_state.ensayo>23:
+if st.session_state.ensayo > 23:
     st.success("🎉 ¡Has completado el experimento! Gracias por participar.")
-    # resumen por fase
     df = pd.read_sql_query(
         "SELECT condicion, AVG(tiempo_reaccion) as media FROM resultados WHERE usuario_id=? GROUP BY condicion",
         sqlite3.connect('experimento.db'),
         params=(st.session_state.usuario_id,)
     )
     st.line_chart(df.set_index("condicion")["media"])
-    # descarga
     df_all = pd.read_sql_query(
         "SELECT * FROM resultados WHERE usuario_id=?",
         sqlite3.connect('experimento.db'),
