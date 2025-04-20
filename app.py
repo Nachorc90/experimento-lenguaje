@@ -4,6 +4,7 @@ import time
 import sqlite3
 import pandas as pd
 import qrcode
+import matplotlib.pyplot as plt
 from io import BytesIO
 from openpyxl import Workbook
 
@@ -219,12 +220,21 @@ if st.session_state.ensayo > 23:
         sqlite3.connect('experimento.db'),
         params=(st.session_state.usuario_id,)
     )
-    # Filtrar para excluir Prueba
-    df = df[df['condicion'].isin(['Significado', 'Antónimo'])]
-    if not df.empty:
-        st.line_chart(df.set_index('condicion')['media'])
-    else:
-        st.warning("No hay datos de Significado o Antónimo para mostrar.")
+ # Filtrar Significado y Antónimo
+    df_sig = df_all[df_all['condicion']=='Significado'].copy()
+    df_ant = df_all[df_all['condicion']=='Antónimo'].copy()
+    # Calcular número de ensayo dentro de la fase
+    df_sig['trial'] = df_sig['ensayo'] - 3
+    df_ant['trial'] = df_ant['ensayo'] - 13
+    # Graficar
+    fig, ax = plt.subplots()
+    ax.plot(df_sig['trial'], df_sig['tiempo_reaccion'], label='Significado', color='red')
+    ax.plot(df_ant['trial'], df_ant['tiempo_reaccion'], label='Antónimo', color='blue')
+    ax.set_xlabel('Ensayo')
+    ax.set_ylabel('Tiempo de reacción (s)')
+    ax.set_title('Tiempos de reacción por ensayo')
+    ax.legend()
+    st.pyplot(fig)
 
     # Datos completos para descarga
     df_all = pd.read_sql_query(
