@@ -1,4 +1,3 @@
-
 import streamlit as st
 import random
 import time
@@ -27,9 +26,9 @@ st.title("🧪 Experimento")
 
 st.markdown("## Instrucciones")
 st.markdown("""
-1. Primero 3 ensayos de PRUEBA con ítems piloto.
-2. Luego 10 ensayos respondiendo la palabra según la definición.
-3. Finalmente 10 ensayos respondiendo el ANTÓNIMO de la definición.
+1. Primero 3 ensayos de **PRUEBA** con ítems piloto.
+2. Luego 10 ensayos respondiendo la palabra según la definición (**Significado**).
+3. Finalmente 10 ensayos respondiendo el **ANTÓNIMO** de la definición.
 
 - No habrá feedback de correcto/incorrecto hasta acabar cada fase.
 - El tiempo de reacción **se mide en el momento en que seleccionas una opción**.
@@ -104,8 +103,6 @@ def inicializar_db():
     conn.close()
 inicializar_db()
 
-# -------- LOGIN ADMIN (omito) --------
-
 # -------- INICIO EXPERIMENTO --------
 if not st.session_state.experimento_iniciado:
     if st.button("🚀 Comenzar Experimento"):
@@ -155,8 +152,10 @@ if st.session_state.ensayo <= 23:
             [v["respuesta"] for v in diccionario.values() if v["respuesta"] != correcta],
             2
         )
-        st.session_state.lista_opciones = [correcta] + distractores
-        random.shuffle(st.session_state.lista_opciones)
+        # sin opción preseleccionada: placeholder + opciones reales
+        reales = [correcta] + distractores
+        random.shuffle(reales)
+        st.session_state.lista_opciones = reales
         st.session_state.definicion = definicion
         st.session_state.correcta = correcta
         st.session_state.t_inicio = time.time()
@@ -166,43 +165,43 @@ if st.session_state.ensayo <= 23:
     st.write(f"**Ensayo {st.session_state.ensayo}/23 - {st.session_state.condicion_actual}**")
     st.write(f"**Definición:** {st.session_state.definicion}")
 
-    # bloquear radio tras responder
+    opciones_radio = ["Selecciona..."] + st.session_state.lista_opciones
     respuesta = st.radio(
         "Selecciona la opción correcta:",
-        st.session_state.lista_opciones,
+        opciones_radio,
         index=0,
-        disabled=st.session_state.respondido
+        disabled=st.session_state.respondido,
+        key=f"radio{st.session_state.ensayo}"
     )
 
-    # medir al seleccionar
-    if not st.session_state.respondido and respuesta:
+    # medir al elegir una opción válida
+    if not st.session_state.respondido and respuesta != "Selecciona...":
         t = time.time() - st.session_state.t_inicio
         st.session_state.t_reaccion = t
         st.session_state.respuesta_usuario = respuesta
         st.session_state.respondido = True
+        # guardar resultado
         correcto = 1 if respuesta.lower() == st.session_state.correcta.lower() else 0
         with sqlite3.connect('experimento.db') as conn:
-            conn.execute('''
-                INSERT INTO resultados
+            conn.execute('''INSERT INTO resultados
                 (usuario_id, ensayo, condicion, definicion,
                  respuesta_usuario, respuesta_correcta,
                  correcto, tiempo_reaccion)
-                VALUES (?,?,?,?,?,?,?,?)
-            ''', (
-                st.session_state.usuario_id,
-                st.session_state.ensayo,
-                st.session_state.condicion_actual,
-                st.session_state.definicion,
-                respuesta,
-                st.session_state.correcta,
-                correcto,
-                t
+                VALUES (?,?,?,?,?,?,?,?)''', (
+                    st.session_state.usuario_id,
+                    st.session_state.ensayo,
+                    st.session_state.condicion_actual,
+                    st.session_state.definicion,
+                    respuesta,
+                    st.session_state.correcta,
+                    correcto,
+                    t
             ))
             conn.commit()
         st.write(f"🕒 Tiempo de respuesta: {t:.2f} segundos")
 
     if st.session_state.respondido:
-        if st.button("Continuar"):
+        if st.button("Continuar", key=f"cont{st.session_state.ensayo}"):
             st.session_state.ensayo += 1
             for k in ["definicion","lista_opciones","respuesta_usuario"]:
                 st.session_state.pop(k, None)
