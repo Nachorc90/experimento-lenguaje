@@ -200,6 +200,7 @@ if st.session_state.ensayo <= 23:
             ))
             conn.commit()
         st.write(f"🕒 Tiempo de respuesta: {t:.2f} segundos")
+        st.rerun
 
     if st.session_state.respondido:
         if st.button("Continuar", key=f"cont{st.session_state.ensayo}"):
