@@ -21,12 +21,12 @@ st.image(qr_bytes, caption="Escanea el QR para acceder al experimento", use_cont
 st.title("🧪 Experimento")
 st.markdown("## Instrucciones")
 st.markdown(r"""
-A continuación van a leer una definición y verán tres opciones:
+A continuación van a leer una definición y verán dos opciones:
 
 1. Práctica: 3 ensayos de **PRUEBA** (definición en rojo).
 2. Experimental: 20 ensayos mezclados:
-   - **Significado** (definición en rojo).
-   - **Antónimo** (definición en azul).
+   - **Significado** (definición en rojo, selecciona sinónimo).
+   - **Antónimo** (definición en azul, selecciona antónimo).
 
 - El tiempo de reacción se mide al seleccionar.
 - La opción se bloquea al seleccionar.
@@ -121,14 +121,13 @@ if st.session_state.ensayo <= len(st.session_state.cond_seq):
         definicion = random.choice(restantes)
         usadas.add(definicion)
         data = pool[definicion]
-        correcta = data['respuesta'] if cond != 'Antónimo' else data['antonimo']
-        distractores = random.sample(
-            [v['respuesta'] for v in diccionario.values() if v['respuesta'] != correcta], 2
-        )
-        opciones = [correcta] + distractores
+        # Obtener las dos opciones: sinónimo y antónimo
+        opcion1 = data['respuesta']
+        opcion2 = data['antonimo']
+        opciones = [opcion1, opcion2]
         random.shuffle(opciones)
         st.session_state.definicion = definicion
-        st.session_state.correcta = correcta
+        st.session_state.correcta = data['respuesta'] if cond == 'Significado' else data['antonimo']
         st.session_state.opciones = opciones
         st.session_state.t0 = time.time()
         st.session_state.respondido = False
@@ -138,9 +137,9 @@ if st.session_state.ensayo <= len(st.session_state.cond_seq):
         f"<span style='color:{color}'>**Definición:** {st.session_state.definicion}</span>", unsafe_allow_html=True
     )
     st.write(f"**Ensayo {st.session_state.ensayo}/{len(st.session_state.cond_seq)} - {cond}**")
-    # Mostrar opciones
+    # Mostrar dos opciones
     respuesta = st.radio(
-        "Selecciona la opción correcta:", st.session_state.opciones,
+        "Selecciona la opción:", st.session_state.opciones,
         index=None, disabled=st.session_state.respondido,
         key=f"radio{st.session_state.ensayo}"
     )
@@ -162,7 +161,6 @@ if st.session_state.ensayo <= len(st.session_state.cond_seq):
                 dt
             ))
             conn.commit()
-        # Mostrar tiempo
         st.write(f"🕒 Tiempo de respuesta: {dt:.2f} segundos")
     # Botón Continuar bloquea pregunta
     if st.session_state.respondido:
@@ -178,13 +176,11 @@ else:
         "SELECT ensayo, condicion, tiempo_reaccion FROM resultados WHERE usuario_id=?",
         sqlite3.connect('experimento.db'), params=(st.session_state.usuario_id,)
     )
-    # Separar fases
     df_sig = df_all[df_all['condicion'] == 'Significado'].copy()
     df_sig['trial'] = range(1, len(df_sig) + 1)
     df_ant = df_all[df_all['condicion'] == 'Antónimo'].copy()
     df_ant['trial'] = range(1, len(df_ant) + 1)
     plot_df = pd.concat([df_sig, df_ant])
-    # Gráfico tiempos
     chart1 = alt.Chart(plot_df).mark_line(point=True).encode(
         x='trial:Q', y='tiempo_reaccion:Q',
         color=alt.Color('condicion:N', scale=
@@ -192,7 +188,6 @@ else:
         )
     ).properties(title='Tiempos de reacción por ensayo')
     st.altair_chart(chart1, use_container_width=True)
-    # Gráfico media fases
     df_mean = plot_df.groupby('condicion')['tiempo_reaccion'].mean().reset_index()
     chart2 = alt.Chart(df_mean).mark_bar().encode(
         x='condicion:N', y='tiempo_reaccion:Q',
@@ -201,7 +196,6 @@ else:
         )
     ).properties(title='Tiempo medio por fase')
     st.altair_chart(chart2, use_container_width=True)
-    # Descarga
     df_export = pd.read_sql_query(
         "SELECT * FROM resultados WHERE usuario_id=?",
         sqlite3.connect('experimento.db'),
