@@ -21,16 +21,19 @@ st.image(qr_bytes, caption="Escanea el QR para acceder al experimento", use_cont
 st.title("🧪 Experimento")
 st.markdown("## Instrucciones")
 st.markdown(r"""
-A continuación van a leer una definición y verán dos opciones:
+A continuación leerá una definición y verá dos opciones de respuesta, el antonimo y el significado.
 
-1. Práctica: 3 ensayos mezclados: 2 de **Significado** (definición en azul) y 1 de **Antónimo** (definición en rojo).  
+Verá dos fases:
+1. Práctica: 3 ensayos mezclados.  
 2. Experimental: 20 ensayos mezclados: 10 de Significado y 10 de Antónimo.
+ 
+- En la fase experimental verá que la defnicion estará escrita de dos colores:
+1. Azul, significa que hay que responder con la definición.
+2. Rojo, signifa que hay que responder con el antónimo.
 
-- El tiempo de reacción se mide al seleccionar.  
 - La opción se bloquea tras seleccionar.  
-- Verás tu tiempo inmediatamente.  
-- Tras la práctica verás un mensaje de transición.  
-- Descansa 30 s al finalizar.  
+- Verá su tiempo de respuesta inmediatamente.  
+- Tras la práctica verás un mensaje de transición.   
 - Al final, dos gráficos: tiempos por ensayo y tiempo medio por fase.
 """)
 
