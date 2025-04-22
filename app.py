@@ -24,15 +24,17 @@ st.markdown("## Instrucciones")
 st.markdown(r"""
 A continuación van a leer una definición y verán tres opciones:
 
-1. Práctica: 3 ensayos de **PRUEBA**.
-2. Experimental: 20 ensayos mezclados (10 Significado, 10 Antónimo).
+1. Práctica: 3 ensayos de **PRUEBA** (definición en rojo).
+2. Experimental: 20 ensayos mezclados:
+   - **Significado** (definición en rojo).
+   - **Antónimo** (definición en azul).
 
 - El tiempo de reacción se mide al seleccionar.
 - La opción se bloquea al seleccionar.
-- Verás tu tiempo inmediatamente.
+- Verás tu tiempo inmediatamente bajo la pregunta.
 - Tras Prueba, verás mensaje de transición.
 - Descansa 30 s al finalizar.
-- Al final, dos gráficos: tiempos por ensayo y tiempo medio.
+- Al final, dos gráficos: tiempos por ensayo y tiempo medio por fase.
 """
 )
 
@@ -130,7 +132,11 @@ if st.session_state.ensayo <= len(st.session_state.cond_seq):
         st.session_state.t0 = time.time()
         st.session_state.respondido = False
     # Color de la definición
-    color = 'black'
+    # Color de la definición por fase
+    if cond in ['Prueba','Significado']:
+        color = 'red'
+    else:
+        color = 'blue'
     if cond == 'Significado': color = 'red'
     if cond == 'Antónimo': color = 'blue'
     st.markdown(
@@ -149,6 +155,7 @@ if st.session_state.ensayo <= len(st.session_state.cond_seq):
     # Procesar selección
     if not st.session_state.respondido and respuesta is not None:
         dt = time.time() - st.session_state.t0
+        st.session_state.t_reaccion = dt
         st.session_state.respondido = True
         correcto_flag = int(respuesta.lower() == st.session_state.correcta.lower())
         with sqlite3.connect('experimento.db') as conn:
@@ -163,11 +170,15 @@ if st.session_state.ensayo <= len(st.session_state.cond_seq):
                 dt
             ))
             conn.commit()
+        # Mostrar tiempo de reacción inmediatamente
         st.write(f"🕒 Tiempo de respuesta: {dt:.2f} segundos")
-        st.rerun()
+        # Opciones bloqueadas automáticamente (sin rerun)
+
     # Botón continuar bloquea pregunta
     if st.session_state.respondido:
-        if st.button("Continuar"):
+        # Mostrar tiempo guardado
+        st.write(f"🕒 Tiempo de respuesta: {st.session_state.t_reaccion:.2f} segundos")
+        if st.button("Continuar")("Continuar"):
             st.session_state.ensayo += 1
             for var in ['definicion', 'correcta', 'opciones', 'respondido']:
                 del st.session_state[var]
