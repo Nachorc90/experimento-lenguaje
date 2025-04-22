@@ -23,14 +23,14 @@ st.markdown("## Instrucciones")
 st.markdown(r"""
 A continuación van a leer una definición y verán dos opciones:
 
-1. Práctica: 3 ensayos mezclados: 2 de **Significado** (definición en rojo) y 1 de **Antónimo** (definición en azul).
+1. Práctica: 3 ensayos mezclados: 2 de **Significado** (definición en rojo) y 1 de **Antónimo** (definición en azul).  
 2. Experimental: 20 ensayos mezclados: 10 de Significado y 10 de Antónimo.
 
-- El tiempo de reacción se mide al seleccionar.
-- La opción se bloquea tras seleccionar.
-- Verás tu tiempo inmediatamente.
-- Tras la práctica verás un mensaje de transición.
-- Descansa 30 s al finalizar.
+- El tiempo de reacción se mide al seleccionar.  
+- La opción se bloquea tras seleccionar.  
+- Verás tu tiempo inmediatamente.  
+- Tras la práctica verás un mensaje de transición.  
+- Descansa 30 s al finalizar.  
 - Al final, dos gráficos: tiempos por ensayo y tiempo medio por fase.
 """)
 
@@ -80,19 +80,18 @@ if 'usuario_id' not in st.session_state:
     st.session_state.usuario_id = str(random.randint(10000,99999))
 if 'ensayo' not in st.session_state:
     st.session_state.ensayo = 1
-    # práctica: 2 Significado + 1 Antónimo
+    # 3 prácticas: 2 Significado + 1 Antónimo
     practica_cond = ['Significado']*2 + ['Antónimo']*1
     random.shuffle(practica_cond)
-    # experimental: 10 Significado + 10 Antónimo
+    # 20 experimentales
     exp_cond = ['Significado']*10 + ['Antónimo']*10
     random.shuffle(exp_cond)
-    # secuencia completa
     st.session_state.cond_seq = practica_cond + exp_cond
     st.session_state.usadas_defs = set()
     st.session_state.respondido = False
     st.session_state.post_practica = False
 
-# -------- INICIALIZAR BD --------
+# -------- INICIALIZAR DB --------
 def init_db():
     conn = sqlite3.connect('experimento.db')
     conn.execute('''CREATE TABLE IF NOT EXISTS resultados(
@@ -128,10 +127,13 @@ if st.session_state.ensayo <= total_trials:
         defin = random.choice(choices)
         st.session_state.usadas_defs.add(defin)
         data = pool[defin]
+
         if cond == 'Significado':
-            correcta = data['respuesta']; distractor = data['antonimo']
+            correcta = data['respuesta']
+            distractor = data['antonimo']
         else:
-            correcta = data['antonimo']; distractor = data['respuesta']
+            correcta = data['antonimo']
+            distractor = data['respuesta']
 
         opts = [correcta, distractor]
         random.shuffle(opts)
@@ -160,67 +162,85 @@ if st.session_state.ensayo <= total_trials:
         st.session_state.t_reaccion = dt
         st.session_state.respondido = True
         correcto_flag = int(respuesta == st.session_state.correcta)
-        with sqlite3.connect('experimento.db') as conn:
-            conn.execute('INSERT INTO resultados VALUES (?,?,?,?,?,?,?,?)', (
-                st.session_state.usuario_id,
-                st.session_state.ensayo,
-                cond,
-                st.session_state.definicion,
-                respuesta,
-                st.session_state.correcta,
-                correcto_flag,
-                dt
-            ))
-            conn.commit()
+        conn = sqlite3.connect('experimento.db')
+        conn.execute('INSERT INTO resultados VALUES (?,?,?,?,?,?,?,?)', (
+            st.session_state.usuario_id,
+            st.session_state.ensayo,
+            cond,
+            st.session_state.definicion,
+            respuesta,
+            st.session_state.correcta,
+            correcto_flag,
+            dt
+        ))
+        conn.commit()
+        conn.close()
+        # Mostrar tiempo
         st.write(f"🕒 Tiempo de respuesta: {dt:.2f} segundos")
 
     # Botón Continuar bloquea pregunta
     if st.session_state.respondido and st.button("Continuar"):
         for k in ['definicion', 'correcta', 'opciones', 'respondido', 't_reaccion']:
-            if k in st.session_state: del st.session_state[k]
+            st.session_state.pop(k, None)
         st.session_state.ensayo += 1
         st.rerun()
 
 else:
     # Fin del experimento
     st.success("🎉 ¡Experimento completado!")
+    conn = sqlite3.connect('experimento.db')
     df_all = pd.read_sql_query(
         "SELECT ensayo, condicion, tiempo_reaccion FROM resultados WHERE usuario_id=?",
-        sqlite3.connect('experimento.db'), params=(st.session_state.usuario_id,)
+        conn, params=(st.session_state.usuario_id,)
     )
+    conn.close()
+
     # Separar fases y asignar trial 1–10
     df_sig = df_all[df_all['condicion']=='Significado'].copy()
     df_sig['trial'] = range(1, len(df_sig)+1)
     df_ant = df_all[df_all['condicion']=='Antónimo'].copy()
     df_ant['trial'] = range(1, len(df_ant)+1)
     plot_df = pd.concat([df_sig, df_ant])
+
     # Gráfico tiempos por ensayo
     chart1 = alt.Chart(plot_df).mark_line(point=True).encode(
-        x='trial:Q', y='tiempo_reaccion:Q',
+        x='trial:Q',
+        y='tiempo_reaccion:Q',
         color=alt.Color('condicion:N', scale=alt.Scale(domain=['Significado','Antónimo'], range=['red','blue']))
     ).properties(title='Tiempos de reacción por ensayo')
     st.altair_chart(chart1, use_container_width=True)
+
     # Gráfico tiempo medio por fase
     df_mean = plot_df.groupby('condicion')['tiempo_reaccion'].mean().reset_index()
     chart2 = alt.Chart(df_mean).mark_bar().encode(
-        x='condicion:N', y='tiempo_reaccion:Q',
+        x='condicion:N',
+        y='tiempo_reaccion:Q',
         color=alt.Color('condicion:N', scale=alt.Scale(domain=['Significado','Antónimo'], range=['red','blue']))
     ).properties(title='Tiempo medio por fase')
     st.altair_chart(chart2, use_container_width=True)
+
     # Descarga de resultados
+    conn = sqlite3.connect('experimento.db')
     df_export = pd.read_sql_query(
         "SELECT * FROM resultados WHERE usuario_id=?",
-        sqlite3.connect('experimento.db'), params=(st.session_state.usuario_id,)
+        conn, params=(st.session_state.usuario_id,)
     )
+    conn.close()
+
     def to_excel(df):
         buf = BytesIO()
         with pd.ExcelWriter(buf, engine='openpyxl') as writer:
             df.to_excel(writer, index=False, sheet_name='Resultados')
-            for col in writer.sheets['Resultados'].columns:
+            ws = writer.sheets['Resultados']
+            for col in ws.columns:
                 max_len = max(len(str(cell.value)) for cell in col)
-                writer.sheets['Resultados'].column_dimensions[col[0].column_letter].width = max_len + 2
+                ws.column_dimensions[col[0].column_letter].width = max_len + 2
         buf.seek(0)
         return buf
-    st.download_button("📥 Descargar resultados", data=to_excel(df_export),
-                       file_name='resultados_experimento.xlsx',
-                       mime='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+
+    st.download_button(
+        "📥 Descargar resultados",
+        data=to_excel(df_export),
+        file_name='resultados_experimento.xlsx',
+        mime='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    )
