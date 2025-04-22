@@ -23,17 +23,17 @@ st.markdown("## Instrucciones")
 st.markdown(r"""
 A continuación leerá una definición y verá dos opciones de respuesta, el antonimo y el significado.
 
-Verá dos fases:
-1. Práctica: 3 ensayos mezclados.  
-2. Experimental: 20 ensayos mezclados: 10 de Significado y 10 de Antónimo.
- 
+Antes de empezar tendrán 3 ensayos de prueba
+
 - En la fase experimental verá que la defnicion estará escrita de dos colores:
 1. Azul, significa que hay que responder con la definición.
-2. Rojo, signifa que hay que responder con el antónimo.
+2. Rojo, significa que hay que responder con el antónimo.
 
-- La opción se bloquea tras seleccionar.  
-- Verá su tiempo de respuesta inmediatamente.  
-- Tras la práctica verás un mensaje de transición.   
+Tener en cuenta: 
+- En cuanto le de al boton de comenzar el experimento, comenzará.
+- Entre ensayos tiene que volver a presionar a continuar para seguir respondiendo.
+- La opción se bloquea tras seleccionar.   
+- Tras la fase de prueba verás un mensaje de transición.   
 - Al final, dos gráficos: tiempos por ensayo y tiempo medio por fase.
 """)
 
