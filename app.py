@@ -23,7 +23,7 @@ st.markdown("## Instrucciones")
 st.markdown(r"""
 A continuación van a leer una definición y verán dos opciones:
 
-1. Práctica: 3 ensayos mezclados: 2 de **Significado** (definición en rojo) y 1 de **Antónimo** (definición en azul).  
+1. Práctica: 3 ensayos mezclados: 2 de **Significado** (definición en azul) y 1 de **Antónimo** (definición en rojo).  
 2. Experimental: 20 ensayos mezclados: 10 de Significado y 10 de Antónimo.
 
 - El tiempo de reacción se mide al seleccionar.  
@@ -80,10 +80,10 @@ if 'usuario_id' not in st.session_state:
     st.session_state.usuario_id = str(random.randint(10000,99999))
 if 'ensayo' not in st.session_state:
     st.session_state.ensayo = 1
-    # 3 prácticas: 2 Significado + 1 Antónimo
+    # Práctica: 2 Significado + 1 Antónimo
     practica_cond = ['Significado']*2 + ['Antónimo']*1
     random.shuffle(practica_cond)
-    # 20 experimentales
+    # Experimental: 10 Significado + 10 Antónimo
     exp_cond = ['Significado']*10 + ['Antónimo']*10
     random.shuffle(exp_cond)
     st.session_state.cond_seq = practica_cond + exp_cond
@@ -111,9 +111,9 @@ practice_len = 3
 if st.session_state.ensayo <= total_trials:
     cond = st.session_state.cond_seq[st.session_state.ensayo - 1]
 
-    # Mensaje de transición tras práctica
+    # Transición tras práctica
     if st.session_state.ensayo == practice_len + 1 and not st.session_state.post_practica:
-        st.warning("¡Has completado la fase de PRUEBA! Ahora comienza la fase experimental de 20 ensayos.")
+        st.warning("¡Has completado la fase de práctica! Ahora comienza la fase experimental de 20 ensayos.")
         if st.button("Continuar"):
             st.session_state.post_practica = True
             st.rerun()
@@ -144,12 +144,15 @@ if st.session_state.ensayo <= total_trials:
         st.session_state.t0 = time.time()
         st.session_state.respondido = False
 
-    # Color de la definición
-    color = 'red' if cond == 'Significado' or st.session_state.ensayo <= practice_len else 'blue'
-    st.markdown(f"<span style='color:{color}'>**Definición:** {st.session_state.definicion}</span>", unsafe_allow_html=True)
+    # Color de la definición: Significado azul, Antónimo rojo
+    color = 'blue' if cond == 'Significado' else 'red'
+    st.markdown(
+        f"<span style='color:{color}'>**Definición:** {st.session_state.definicion}</span>",
+        unsafe_allow_html=True
+    )
     st.write(f"**Ensayo {st.session_state.ensayo}/{total_trials} - {cond}**")
 
-    # Mostrar dos opciones
+    # Mostrar dos opciones: sinónimo y antónimo
     respuesta = st.radio(
         "Selecciona la opción correcta:", st.session_state.opciones,
         index=None, disabled=st.session_state.respondido,
@@ -175,7 +178,6 @@ if st.session_state.ensayo <= total_trials:
         ))
         conn.commit()
         conn.close()
-        # Mostrar tiempo
         st.write(f"🕒 Tiempo de respuesta: {dt:.2f} segundos")
 
     # Botón Continuar bloquea pregunta
@@ -189,8 +191,9 @@ else:
     # Fin del experimento
     st.success("🎉 ¡Experimento completado!")
     conn = sqlite3.connect('experimento.db')
+    # Solo experimentales (descartar práctica ensayos 1–3)
     df_all = pd.read_sql_query(
-        "SELECT ensayo, condicion, tiempo_reaccion FROM resultados WHERE usuario_id=?",
+        "SELECT ensayo, condicion, tiempo_reaccion FROM resultados WHERE usuario_id=? AND ensayo>3",
         conn, params=(st.session_state.usuario_id,)
     )
     conn.close()
@@ -202,20 +205,22 @@ else:
     df_ant['trial'] = range(1, len(df_ant)+1)
     plot_df = pd.concat([df_sig, df_ant])
 
-    # Gráfico tiempos por ensayo
+    # Gráfico tiempos por ensayo (Significado azul, Antónimo rojo)
     chart1 = alt.Chart(plot_df).mark_line(point=True).encode(
-        x='trial:Q',
-        y='tiempo_reaccion:Q',
-        color=alt.Color('condicion:N', scale=alt.Scale(domain=['Significado','Antónimo'], range=['red','blue']))
+        x='trial:Q', y='tiempo_reaccion:Q',
+        color=alt.Color('condicion:N',
+                        scale=alt.Scale(domain=['Significado','Antónimo'],
+                                        range=['blue','red']))
     ).properties(title='Tiempos de reacción por ensayo')
     st.altair_chart(chart1, use_container_width=True)
 
     # Gráfico tiempo medio por fase
     df_mean = plot_df.groupby('condicion')['tiempo_reaccion'].mean().reset_index()
     chart2 = alt.Chart(df_mean).mark_bar().encode(
-        x='condicion:N',
-        y='tiempo_reaccion:Q',
-        color=alt.Color('condicion:N', scale=alt.Scale(domain=['Significado','Antónimo'], range=['red','blue']))
+        x='condicion:N', y='tiempo_reaccion:Q',
+        color=alt.Color('condicion:N',
+                        scale=alt.Scale(domain=['Significado','Antónimo'],
+                                        range=['blue','red']))
     ).properties(title='Tiempo medio por fase')
     st.altair_chart(chart2, use_container_width=True)
 
