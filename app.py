@@ -110,6 +110,15 @@ total_trials = len(st.session_state.cond_seq)
 if st.session_state.ensayo <= total_trials:
     cond = st.session_state.cond_seq[st.session_state.ensayo - 1]
     # mensaje transición tras práctica
+    practice_len = 3  # longitud de la fase práctica
+    if st.session_state.ensayo == practice_len + 1 and not st.session_state.post_practica:
+        st.warning("¡Has completado la fase de PRUEBA! Ahora comienza la fase experimental de 20 ensayos.")
+        if st.button("Continuar"):
+            st.session_state.post_practica = True
+            st.rerun()
+        else:
+            st.stop()
+
     if st.session_state.ensayo == len(pract_conds) + 1 and not st.session_state.post_practica:
         st.warning("¡Has completado la práctica! Ahora comienza la fase experimental de 20 ensayos.")
         if st.button("Continuar"):
