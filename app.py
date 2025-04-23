@@ -145,7 +145,7 @@ if st.session_state.ensayo <= total_trials:
         st.session_state.respondido = False
 
     # Color de la definición: Significado azul, Antónimo rojo
-    color = 'blue' if cond == 'Significado' else 'red'
+    color = 'green' if cond == 'Significado' else 'red'
     st.markdown(
         f"<span style='color:{color}'>**Definición:** {st.session_state.definicion}</span>",
         unsafe_allow_html=True
@@ -210,7 +210,7 @@ else:
         x='trial:Q', y='tiempo_reaccion:Q',
         color=alt.Color('condicion:N',
                         scale=alt.Scale(domain=['Significado','Antónimo'],
-                                        range=['blue','red']))
+                                        range=['green','red']))
     ).properties(title='Tiempos de reacción por ensayo')
     st.altair_chart(chart1, use_container_width=True)
 
@@ -220,7 +220,7 @@ else:
         x='condicion:N', y='tiempo_reaccion:Q',
         color=alt.Color('condicion:N',
                         scale=alt.Scale(domain=['Significado','Antónimo'],
-                                        range=['blue','red']))
+                                        range=['green','red']))
     ).properties(title='Tiempo medio por fase')
     st.altair_chart(chart2, use_container_width=True)
 
