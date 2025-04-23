@@ -25,12 +25,11 @@ A continuación leerá una definición y verá dos opciones de respuesta, el ant
 
 Antes de empezar tendrán 3 ensayos de prueba
 
-- En la fase experimental verá que la defnicion estará escrita de dos colores:
+- En la fase experimental verá que la definicion estará escrita de dos colores:
 1. Azul, significa que hay que responder con la definición.
 2. Rojo, significa que hay que responder con el antónimo.
 
 Tener en cuenta: 
-- En cuanto le de al boton de comenzar el experimento, comenzará.
 - Entre ensayos tiene que volver a presionar a continuar para seguir respondiendo.
 - La opción se bloquea tras seleccionar.   
 - Tras la fase de prueba verás un mensaje de transición.   
