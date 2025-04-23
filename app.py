@@ -21,7 +21,7 @@ st.image(qr_bytes, caption="Escanea el QR para acceder al experimento", use_cont
 st.title("🧪 Experimento")
 st.markdown("## Instrucciones")
 st.markdown(r"""
-A continuación leerá una definición y verá dos opciones de respuesta, el antónimo y el significado.
+A continuación leerá una definición y verá dos opciones de respuesta, el significado y el antónimo.
 
 Antes de empezar tendrán 3 ensayos de prueba.
 
