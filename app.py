@@ -23,7 +23,7 @@ st.markdown("## Instrucciones")
 st.markdown(r"""
 A continuación leerá una definición y verá dos opciones de respuesta, el significado y el antónimo.
 
-Antes de empezar tendrán 3 ensayos de prueba.
+Antes de empezar tendrá 3 ensayos de prueba.
 
 - En la fase experimental verá que la definición estará escrita de dos colores:
 1. Verde, significa que hay que responder con la definición.
