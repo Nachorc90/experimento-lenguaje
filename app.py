@@ -29,11 +29,9 @@ Antes de empezar tendrán 3 ensayos de prueba
 1. Azul, significa que hay que responder con la definición.
 2. Rojo, significa que hay que responder con el antónimo.
 
-Tener en cuenta: 
-- Entre ensayos tiene que volver a presionar a continuar para seguir respondiendo.
-- La opción se bloquea tras seleccionar.   
-- Tras la fase de prueba verás un mensaje de transición.   
-- Al final, dos gráficos: tiempos por ensayo y tiempo medio por fase.
+Debe tener en cuenta que: 
+- Una vez haya respondido tiene que volver a presionar "continuar" para seguir respondiendo.    
+- Si no tiene ninguna duda pulse el boton de comenzar experimento. 
 """)
 
 # -------- BOTÓN DE INICIO --------
