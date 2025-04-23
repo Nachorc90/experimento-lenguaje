@@ -21,12 +21,12 @@ st.image(qr_bytes, caption="Escanea el QR para acceder al experimento", use_cont
 st.title("🧪 Experimento")
 st.markdown("## Instrucciones")
 st.markdown(r"""
-A continuación leerá una definición y verá dos opciones de respuesta, el antonimo y el significado.
+A continuación leerá una definición y verá dos opciones de respuesta, el antónimo y el significado.
 
-Antes de empezar tendrán 3 ensayos de prueba
+Antes de empezar tendrán 3 ensayos de prueba.
 
-- En la fase experimental verá que la definicion estará escrita de dos colores:
-1. Azul, significa que hay que responder con la definición.
+- En la fase experimental verá que la definición estará escrita de dos colores:
+1. Verde, significa que hay que responder con la definición.
 2. Rojo, significa que hay que responder con el antónimo.
 
 Debe tener en cuenta que: 
